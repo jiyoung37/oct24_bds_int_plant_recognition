@@ -1,7 +1,7 @@
-Project Name
+Planting parents 
 ==============================
 
-This repo is a Starting Pack for DS projects. You can rearrange the structure to make it fits your project.
+A deep learning model for plant image recognition.
 
 Project Organization
 ------------

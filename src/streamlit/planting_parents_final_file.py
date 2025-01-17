@@ -26,7 +26,7 @@ import pandas as pd
 # from tensorflow.keras.callbacks import ModelCheckpoint
 
 # Define the path to the file
-file_path = "https://raw.githubusercontent.com/DataScientest-Studio/oct24_bds_int_plant_recognition/refs/heads/main/src/streamlit/planting_parents_final_file.py"
+file_path = "https://raw.githubusercontent.com/Nielsvd06/streamlit_apps/refs/heads/main/plant_dataset.csv"
 
 # Load the CSV file into a DataFrame
 df = pd.read_csv(file_path)

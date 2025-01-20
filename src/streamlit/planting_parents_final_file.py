@@ -3,7 +3,7 @@ import os
 import pandas as pd
 
 # Load the CSV file into a DataFrame
-df = pd.read_csv("plant_dataset.csv")
+df = pd.read_csv("./plant_dataset.csv")
 
 # start with the streamlit app
 

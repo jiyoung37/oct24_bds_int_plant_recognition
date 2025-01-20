@@ -2,25 +2,23 @@ import streamlit as st
 import os
 import pandas as pd
 
-# Define the GitHub raw file URL
-file_path = os.path.expanduser("~/Documents/DataScientest/plant_dataset.csv")
-
-# raw github path: https://raw.githubusercontent.com/Nielsvd06/streamlit_apps/refs/heads/main/plant_dataset.csv
-
 # Load the CSV file into a DataFrame
-df = pd.read_csv(file_path)
+df = pd.read_csv("plant_dataset.csv")
 
 # start with the streamlit app
 
 # sidebar and page navigation
 st.sidebar.title("Table of contents")
-pages = ["Home", "Data overview", "Data analysis & visualization", "Model training", "Conclusion"]
+pages = ["Home", "Data overview", "Data analysis & visualization", "Model training", "Model Interpretability", "Conclusion", "Predict your plant"]
 page = st.sidebar.radio("Go to", pages)
 
 # set a dynamic title for each page
-st.title(f"Planting Parents: {page}")
+# st.title(f"Planting Parents: {page}")
 
 if page == pages[0]:
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        st.image("./../visualization/Planting_parents_logo.png", use_container_width=True)
     st.header("Introduction")
     st.write("Welcome to the site of the Planting Parents, where we have trained an AI model to recognise different species of plants and whether they are sick or healthy."
     " We sincerely hope you enjoy our page, that you may find it informative and recognise the plants you want to recognise")
@@ -41,5 +39,20 @@ elif page == pages[3]:
     st.write("### 2nd paragraph")
 
 elif page == pages[4]:
+    st.write("### Model Interpretability")
+    st.write("Yanniks Todo's:")
+    st.checkbox("Why interpretability matters ")
+    st.checkbox("Short explanationon Grad-CAM")
+    st.checkbox("Show some examples")
+    st.checkbox("Grad-CAMs when going through the layers of a model")
+
+elif page == pages[5]:
     st.write("### 1st paragraph")
     st.write("### 2nd paragraph")
+
+elif page == pages[6]:
+    st.write("### Upload an image to predict the plant type")
+    st.write("This subpage should contain the actual app. Here, the user should chose")
+    st.checkbox("between different models")
+    st.checkbox("wether or not a Grad-CAM of the image should be shown")
+    

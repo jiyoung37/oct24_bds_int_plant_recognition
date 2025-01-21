@@ -3,7 +3,7 @@ import os
 import pandas as pd
 
 # Load the CSV file into a DataFrame
-df = pd.read_csv("./plant_dataset.csv")
+# df = pd.read_csv("./plant_dataset.csv")
 
 # start with the streamlit app
 
@@ -26,9 +26,9 @@ if page == pages[0]:
 
 elif page == pages[1]:
     st.write("### Scope of the data")
-    st.write("\n", "Data Frame shape:", "\n", df.shape, "\n")
-    st.dataframe(df.describe())
-    st.dataframe(df.head(6))
+    # st.write("\n", "Data Frame shape:", "\n", df.shape, "\n")
+    # st.dataframe(df.describe())
+    # st.dataframe(df.head(6))
 
 elif page == pages[2]:
     st.write("### 1st paragraph")

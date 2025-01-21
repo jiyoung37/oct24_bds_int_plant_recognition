@@ -1,6 +1,61 @@
 import streamlit as st
 import os
 import pandas as pd
+import numpy as np
+from PIL import Image
+import tensorflow as tf
+
+indices2labels = {
+    0: 'Apple___Apple_scab', 
+    1: 'Apple___Black_rot', 
+    2: 'Apple___Cedar_apple_rust', 
+    3: 'Apple___healthy', 
+    4: 'Blueberry___healthy', 
+    5: 'Cherry_(including_sour)___Powdery_mildew', 
+    6: 'Cherry_(including_sour)___healthy', 
+    7: 'Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot', 
+    8: 'Corn_(maize)___Common_rust_', 
+    9: 'Corn_(maize)___Northern_Leaf_Blight', 
+    10: 'Corn_(maize)___healthy', 
+    11: 'Grape___Black_rot', 
+    12: 'Grape___Esca_(Black_Measles)', 
+    13: 'Grape___Leaf_blight_(Isariopsis_Leaf_Spot)', 
+    14: 'Grape___healthy', 
+    15: 'Orange___Haunglongbing_(Citrus_greening)', 
+    16: 'Peach___Bacterial_spot', 
+    17: 'Peach___healthy', 
+    18: 'Pepper,_bell___Bacterial_spot', 
+    19: 'Pepper,_bell___healthy', 
+    20: 'Potato___Early_blight', 
+    21: 'Potato___Late_blight', 
+    22: 'Potato___healthy', 
+    23: 'Raspberry___healthy', 
+    24: 'Soybean___healthy', 
+    25: 'Squash___Powdery_mildew', 
+    26: 'Strawberry___Leaf_scorch', 
+    27: 'Strawberry___healthy', 
+    28: 'Tomato___Bacterial_spot', 
+    29: 'Tomato___Early_blight', 
+    30: 'Tomato___Late_blight', 
+    31: 'Tomato___Leaf_Mold', 
+    32: 'Tomato___Septoria_leaf_spot', 
+    33: 'Tomato___Spider_mites Two-spotted_spider_mite', 
+    34: 'Tomato___Target_Spot', 
+    35: 'Tomato___Tomato_Yellow_Leaf_Curl_Virus', 
+    36: 'Tomato___Tomato_mosaic_virus', 
+    37: 'Tomato___healthy'
+}
+
+# Function to load Keras model
+def load_keras_model(file_path):
+    return tf.keras.models.load_model(file_path)
+
+# Function to preprocess the uploaded image
+def preprocess_image(image, target_size=(256, 256)):
+    image = image.resize(target_size)
+    image_array = np.array(image) / 255.0
+    image_array = np.expand_dims(image_array, axis=0)
+    return image_array
 
 # Load the CSV file into a DataFrame
 df = pd.read_csv("src/streamlit/plant_dataset.csv")
@@ -137,8 +192,45 @@ elif page == pages[5]:
 
 
 elif page == pages[6]:
-    st.write("### Upload an image to predict the plant type")
-    st.write("This subpage should contain the actual app. Here, the user should chose")
-    st.checkbox("between different models")
-    st.checkbox("wether or not a Grad-CAM of the image should be shown")
+    st.write("### Predict your plant")
+
+    # Dropdown menu for selecting a trained model
+    model_files = [f for f in os.listdir("src/models/") if f.endswith(".keras") or f.endswith(".pth")]
+    selected_model_file = st.selectbox("Select a trained model:", model_files)
+    
+    # Checkbox for Grad-CAM
+    display_grad_cam = st.checkbox("Display Grad-CAM")
+
+    # Drag-and-drop file uploader for image
+    uploaded_file = st.file_uploader("Upload an image:", type=["jpg", "jpeg", "png"])
+
+    if uploaded_file is not None:
+        # Display uploaded image
+        image = Image.open(uploaded_file)
+        st.image(image, caption="Uploaded Image", use_container_width=True)
+
+        # Preprocess the image
+        preprocessed_image = preprocess_image(image)
+
+        # Load the selected model
+        model_path = os.path.join("src/models", selected_model_file)
+        if selected_model_file.endswith(".keras"):
+            model = load_keras_model(model_path)
+            predictions = model.predict(preprocessed_image)
+            predicted_idx = np.argmax(predictions, axis=1)
+            predicted_label = indices2labels[predicted_idx]
+        # elif selected_model_file.endswith(".pth"):
+        #     model = load_pytorch_model(model_path)
+        #     transform = transforms.Compose([
+        #         transforms.Resize((224, 224)),
+        #         transforms.ToTensor(),
+        #     ])
+        #     torch_image = transform(image).unsqueeze(0)
+        #     predictions = model(torch_image).detach().numpy()
+
+        # Display predictions
+        st.subheader("Model Prediction")
+        st.write(predicted_label)
+        # st.write(predicted_classes)
+
     

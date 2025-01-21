@@ -2,6 +2,10 @@ import streamlit as st
 import os
 import pandas as pd
 
+# Check the working directory and all files which are contained in it
+st.write("Current working directory:", os.getcwd())
+st.write("Files in current directory:", os.listdir())
+
 # Load the CSV file into a DataFrame
 # df = pd.read_csv("./plant_dataset.csv")
 
@@ -17,8 +21,8 @@ page = st.sidebar.radio("Go to", pages)
 
 if page == pages[0]:
     col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        st.image("./../visualization/Planting_parents_logo.png", use_container_width=True)
+    # with col2:
+    #     st.image("./../visualization/Planting_parents_logo.png", use_container_width=True)
     st.header("Introduction")
     st.write("Welcome to the site of the Planting Parents, where we have trained an AI model to recognise different species of plants and whether they are sick or healthy."
     " We sincerely hope you enjoy our page, that you may find it informative and recognise the plants you want to recognise")

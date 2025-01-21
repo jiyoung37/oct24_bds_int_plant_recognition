@@ -25,7 +25,8 @@ if page == pages[0]:
              " We sincerely hope you enjoy our page and that you may find it informative and recognise the plants you want to recognise. ")
         st.write("**The planting parents,**")
         st.write("**Lara, Ji-Young, Yannik & Niels**")
-        st.write("TEST TEST TEST")
+
+## Hello hello hello
 
 
 ####################

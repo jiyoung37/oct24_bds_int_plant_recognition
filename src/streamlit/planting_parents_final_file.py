@@ -2,53 +2,18 @@ import streamlit as st
 import os
 import pandas as pd
 import numpy as np
+import json
 from PIL import Image
 import tensorflow as tf
-
-indices2labels = {
-    0: 'Apple___Apple_scab', 
-    1: 'Apple___Black_rot', 
-    2: 'Apple___Cedar_apple_rust', 
-    3: 'Apple___healthy', 
-    4: 'Blueberry___healthy', 
-    5: 'Cherry_(including_sour)___Powdery_mildew', 
-    6: 'Cherry_(including_sour)___healthy', 
-    7: 'Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot', 
-    8: 'Corn_(maize)___Common_rust_', 
-    9: 'Corn_(maize)___Northern_Leaf_Blight', 
-    10: 'Corn_(maize)___healthy', 
-    11: 'Grape___Black_rot', 
-    12: 'Grape___Esca_(Black_Measles)', 
-    13: 'Grape___Leaf_blight_(Isariopsis_Leaf_Spot)', 
-    14: 'Grape___healthy', 
-    15: 'Orange___Haunglongbing_(Citrus_greening)', 
-    16: 'Peach___Bacterial_spot', 
-    17: 'Peach___healthy', 
-    18: 'Pepper,_bell___Bacterial_spot', 
-    19: 'Pepper,_bell___healthy', 
-    20: 'Potato___Early_blight', 
-    21: 'Potato___Late_blight', 
-    22: 'Potato___healthy', 
-    23: 'Raspberry___healthy', 
-    24: 'Soybean___healthy', 
-    25: 'Squash___Powdery_mildew', 
-    26: 'Strawberry___Leaf_scorch', 
-    27: 'Strawberry___healthy', 
-    28: 'Tomato___Bacterial_spot', 
-    29: 'Tomato___Early_blight', 
-    30: 'Tomato___Late_blight', 
-    31: 'Tomato___Leaf_Mold', 
-    32: 'Tomato___Septoria_leaf_spot', 
-    33: 'Tomato___Spider_mites Two-spotted_spider_mite', 
-    34: 'Tomato___Target_Spot', 
-    35: 'Tomato___Tomato_Yellow_Leaf_Curl_Virus', 
-    36: 'Tomato___Tomato_mosaic_virus', 
-    37: 'Tomato___healthy'
-}
 
 # Function to load Keras model
 def load_keras_model(file_path):
     return tf.keras.models.load_model(file_path)
+
+# Load class indices from a JSON file
+def load_class_indices(file_path="src/streamlit/class_indices.json"):
+    with open(file_path, "r") as f:
+        return json.load(f)
 
 # Function to preprocess the uploaded image
 def preprocess_image(image, target_size=(256, 256)):
@@ -217,8 +182,8 @@ elif page == pages[6]:
         if selected_model_file.endswith(".keras"):
             model = load_keras_model(model_path)
             predictions = model.predict(preprocessed_image)
-            predicted_idx = np.argmax(predictions, axis=1)
-            predicted_label = indices2labels[predicted_idx]
+            predicted_idx = np.argmax(predictions, axis=1)[0]
+            # predicted_label = indices2labels[predicted_idx]
         # elif selected_model_file.endswith(".pth"):
         #     model = load_pytorch_model(model_path)
         #     transform = transforms.Compose([
@@ -228,9 +193,13 @@ elif page == pages[6]:
         #     torch_image = transform(image).unsqueeze(0)
         #     predictions = model(torch_image).detach().numpy()
 
+        # Load class indices
+        class_indices = load_class_indices()
+
         # Display predictions
         st.subheader("Model Prediction")
-        st.write(predicted_label)
+        # st.write(predictions)
+        st.write(class_indices[str(predicted_idx)])
         # st.write(predicted_classes)
 
     

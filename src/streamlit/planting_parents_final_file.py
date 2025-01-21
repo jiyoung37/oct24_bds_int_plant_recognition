@@ -9,7 +9,7 @@ df = pd.read_csv("src/streamlit/plant_dataset.csv")
 
 # sidebar and page navigation
 st.sidebar.title("Table of contents")
-pages = ["Home", "Data overview", "Data exploration", "Model training", "Model Interpretability", "Conclusion", "Predict your plant"]
+pages = ["Home", "Data overview", "Data exploration", "Model Training", "Model Interpretability", "Conclusion", "Predict your plant"]
 page = st.sidebar.radio("Go to", pages)
 
 # set a dynamic title for each page
@@ -25,8 +25,6 @@ if page == pages[0]:
              " We sincerely hope you enjoy our page and that you may find it informative and recognise the plants you want to recognise. ")
         st.write("**The planting parents,**")
         st.write("**Lara, Ji-Young, Yannik & Niels**")
-
-## Hello hello hello
 
 
 ####################
@@ -93,9 +91,25 @@ elif page == pages[2]:
     st.write("### 1st paragraph")
     st.write("### 2nd paragraph")
 
+
+####################
+# MODEL TRAINING   #
+####################
+
+
 elif page == pages[3]:
+    st.write("### Model Training")
+    
+    tab1, tab2, tab3 = st.tabs(["Baseline CNN's", "Transfer Learning", "Pre-trained PyTorch"])
+
     st.write("### 1st paragraph")
     st.write("### 2nd paragraph")
+
+
+####################
+# MODEL INTERPRET  #
+####################
+
 
 elif page == pages[4]:
     st.write("### Model Interpretability")
@@ -105,9 +119,22 @@ elif page == pages[4]:
     st.checkbox("Show some examples")
     st.checkbox("Grad-CAMs when going through the layers of a model")
 
+
+####################
+# CONCLUSION       #
+####################
+
+
 elif page == pages[5]:
+    st.write("### Conclusion")
     st.write("### 1st paragraph")
     st.write("### 2nd paragraph")
+
+
+####################
+# UPLOAD IMAGE     #
+####################
+
 
 elif page == pages[6]:
     st.write("### Upload an image to predict the plant type")

@@ -140,11 +140,14 @@ elif page == pages[3]:
     st.write("### 1st paragraph")
     st.write("### 2nd paragraph")
 
-with tab1: # Baseline CNN's (Ji)
-with tab2: # Transfer Learning (Niels and Lara)
-        st.write("In this section, we tested different pre-trained models")
-with tab3: # Pre-trained models with Pytorch (Yannik)
+    with tab1: # Baseline CNN's (Ji)
+        st.write("")
 
+    with tab2: # Transfer Learning (Niels and Lara)
+        st.write("In this section, we tested different pre-trained models")
+
+    with tab3: # Pre-trained models with Pytorch (Yannik)
+        st.write("")
 
 ####################
 # MODEL INTERPRET  #

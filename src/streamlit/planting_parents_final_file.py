@@ -137,6 +137,78 @@ elif page == pages[3]:
 
 
     with tab1: # Baseline CNN's (Ji)
+        st.write("### Convolutional Neural Networks (CNNs) ")
+        st.write('''
+        In this section, we investigate the performance of Convolutional Neural Networks (CNNs), 
+        a fundamental model choice for image analysis tasks 
+        because of its ability to efficiently identify and interpret patterns and structures 
+        at multiple levels of detail within visual data.
+        ''')
+        st.write('''
+        To optimize the performance of our CNN model, we evaluated several parameters \
+        that influence accuracy, generalization, and computational efficiency. 
+        These parameters include dataset size, image resolution, learning rate, 
+        data augmentation techniques, and the depth of the CNN architecture 
+        (number of convolutional layers). By varying these parameters, 
+        we aimed to identify the configurations that maximize model performance 
+        for our image classification task.
+        ''')
+            
+
+        st.write("### CNN Model Architecture ")
+        st.write('''
+        1. Convolutional Layers:
+        These layers apply filters to the input data to extract features such as edges, textures, and other patterns. They help the network detect spatial features from images at different levels of abstraction.
+
+        2. Batch Normalization Layers:
+        These layers normalize the inputs of each layer to have a mean of 0 and a variance of 1. This speeds up training, stabilizes the learning process, and helps reduce the risk of overfitting.
+
+        3. Max-Pooling Layers:
+        These layers reduce the spatial dimensions of the feature maps by taking the maximum value from a pooling window (e.g., 2x2). This makes the model computationally efficient and helps it focus on the most important features while reducing sensitivity to spatial translations.
+
+        4. Fully Connected Layers:
+        These layers flatten the feature maps into a 1D vector and integrate the extracted features to perform the final classification or regression tasks. They are responsible for the decision-making process in the network.
+                  ''')
+        st.write('''
+
+                 ''')
+        st.write("### CNN Model: 2-layers (CNN-2x) vs 3-layers (CNN-3x) ")
+        # Option 1
+        col1, col2 = st.columns(2)
+        with col1:
+            st.image("Model-architecture_CNN-2.png", use_container_width=True)
+        with col2:
+            st.image("Model-architecture_CNN-3.png", use_container_width=True)
+        # Option 2
+        # st.image("Model-architecture_CNN-2.png", use_container_width=True)
+        # st.image("Model-architecture_CNN-3.png", use_container_width=True)
+
+############### Tab 1 - subtab ##################
+        # subtab
+        sub_tab = st.radio("Test parameters", 
+                           ["Dataset size", "Image size", "Learning rate", "Augmentation","CNN layer"])
+############### Tab 1 - subtab 1 ##################        
+        if sub_tab == "Dataset size":
+            st.write("In this section, we tested different pre-trained models")
+            st.image("1_CNN_Dataset_graph+cm.png", use_container_width=True)
+############### Tab 1 - subtab 2 ##################   
+        elif sub_tab == "Image size":
+            st.write("In this section, we tested different image sizes.")
+############### Tab 1 - subtab 3 ##################  
+        elif sub_tab == "Learning rate":
+            st.write("In this section, we experimented with different learning rates.")
+############### Tab 1 - subtab 4 ##################  
+        elif sub_tab == "Augmentation":
+            st.write("In this section, we tested various data augmentation techniques.")
+############### Tab 1 - subtab 5 ##################  
+        elif sub_tab == "CNN layer":
+            st.write("In this section, we tested various data augmentation techniques.")
+
+
+
+############### Tab 2 ##################
+    with tab2: # Transfer Learning (Niels and Lara)
+        st.write("In this section, we tested different pre-trained models")
         st.write("")
 
 

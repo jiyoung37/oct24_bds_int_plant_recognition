@@ -102,14 +102,166 @@ elif page == pages[3]:
     
     tab1, tab2, tab3 = st.tabs(["Baseline CNN's", "Transfer Learning", "Pre-trained PyTorch"])
 
-    st.write("### 1st paragraph")
-    st.write("### 2nd paragraph")
 
     with tab1: # Baseline CNN's (Ji)
         st.write("")
 
-    with tab2: # Transfer Learning (Niels and Lara)
-        st.write("In this section, we tested different pre-trained models")
+
+    with tab2: # Transfer Learning
+        st.write("**Pre-trained models**")
+        st.markdown("· MobileNetV2")
+        st.markdown("· VGG16")
+        st.markdown("· ResNet 101")
+        st.markdown("· ResNet 50")
+        st.markdown("· EfficientNetV2")
+        st.write("\n")
+
+        
+
+
+        # All layers frozen (Niels)
+        st.write("### **All layers frozen**")
+
+
+
+        
+        # LAYER UNFREEZING (Lara)
+        st.write("### **Unfreezing of layers**")
+
+        # Parameters
+        st.write("**Parameters**")
+        params = {
+        'Dataset size': ['70K'],
+        'Augmentation': ['No'],
+        'Learning rate': ['0.001'],
+        'Image size': ['256x256'],
+        'Batch size': [32],
+        'Number of Epochs': [50],
+        'Test images': [33]
+        }
+
+        # Create DataFrame
+        parameters = pd.DataFrame(params)
+        
+        st.markdown(parameters.style.hide(axis="index").to_html(), unsafe_allow_html=True)
+        st.write("\n")
+        st.write("\n")
+
+        # MobileNetV2
+        st.markdown("<h2 style='text-align: center; color: black;'>MobileNetV2 </h2>", unsafe_allow_html=True)
+        st.markdown("**1) All layers unfrozen**")
+        st.markdown("""<div style='text-align: center;'>Metrics history</div>""", unsafe_allow_html=True)
+        st.image("src/visualization/Transfer_Learning_param_tests/TL_MobileNet_unfrozen.png")
+        st.write("\n")
+
+        
+        st.markdown("""<div style='text-align: center;'>Confusion matrix</div>""", unsafe_allow_html=True)
+        st.image("src/visualization/Transfer_Learning_param_tests/TL_MobileNet_unfrozen_CM.png")
+        st.write("\n")
+        st.write("\n")
+
+        st.markdown("**2) Only last block of layers unfrozen**")
+        st.markdown("""<div style='text-align: center;'>Metrics history</div>""", unsafe_allow_html=True)
+        st.image("src/visualization/Transfer_Learning_param_tests/TL_MobileNet_1Block_unfrozen.png")
+        st.write("\n")
+
+                
+        st.markdown("""<div style='text-align: center;'>Confusion matrix</div>""", unsafe_allow_html=True)
+        st.image("src/visualization/Transfer_Learning_param_tests/TL_MobileNet_1Block_unfrozen_CM.png")
+        st.write("\n")
+        st.markdown("""<span style='color: red;'>*No significant change between both trainings</span>""", unsafe_allow_html=True)
+        st.write("\n")
+
+        # VGG16
+        st.markdown("<h2 style='text-align: center; color: black;'>VGG16 </h2>", unsafe_allow_html=True)
+    
+        st.markdown("**1) All layers unfrozen**")
+        st.markdown("""<div style='text-align: center;'>Metrics history</div>""", unsafe_allow_html=True)
+        st.image("src/visualization/Transfer_Learning_param_tests/TL_VGG16_unfrozen.png")
+        st.write("\n")
+
+        
+        st.markdown("""<div style='text-align: center;'>Confusion matrix</div>""", unsafe_allow_html=True)
+        st.image("src/visualization/Transfer_Learning_param_tests/TL_VGG16_unfrozen_CM.png")
+        st.write("\n")
+        st.write("\n")
+
+        st.markdown("**2) Only last block of layers unfrozen**")
+        st.markdown("""<div style='text-align: center;'>Metrics history</div>""", unsafe_allow_html=True)
+        st.image("src/visualization/Transfer_Learning_param_tests/TL_VGG16_1Block_unfrozen.png")
+        st.write("\n")
+
+                
+        st.markdown("""<div style='text-align: center;'>Confusion matrix</div>""", unsafe_allow_html=True)
+        st.image("src/visualization/Transfer_Learning_param_tests/TL_VGG16_1Block_unfrozen_CM.png")
+        st.write("\n")
+        st.markdown("""<span style='color: red;'>*Clear improvement when only the last block of layers is unfrozen</span>""", unsafe_allow_html=True)
+        st.write("\n")
+        st.write("\n")
+
+        # Summary of metrics
+        st.markdown("**Metrics summary**")
+        data = {
+        'Model': [
+        'MobileNetV2 unfrozen', 'MobileNetV2 partly frozen', 
+        'VGG16 unfrozen', 'VGG16 partly frozen'
+        ],
+        'Accuracy': [0.99, 0.99, 0.03, 0.99],
+        'Loss': [0.02, 0.02, 3.64, 0.04],
+        'Val-accuracy': [0.99, 0.99, 0.03, 0.96],
+        'Val-loss': [0.05, 0.05, 3.64, 0.15],
+        'Test Prediction Accuracy': [1.00, 0.93, 0.09, 0.88]
+        }
+
+        # Create DataFrame with the updated values
+        df = pd.DataFrame(data)
+        df.set_index ('Model', inplace=True)       
+        st.dataframe(df)
+        st.write("\n")
+        st.write("\n")
+
+
+
+
+        # Modification of other parameters
+        st.write("### **Parameter variation for VGG16**")
+
+        st.markdown("**1) Change of learning rate to 0.0001**")
+        st.markdown("""<div style='text-align: center;'>Metrics history</div>""", unsafe_allow_html=True)
+        st.image("src/visualization/Transfer_Learning_param_tests/TL_VGG16_unfrozen_lr10e-4.png")
+        st.write("\n")
+
+        st.markdown("**2) Change of input image size to 224x224**")
+        st.markdown("""<div style='text-align: center;'>Metrics history</div>""", unsafe_allow_html=True)
+        st.image("src/visualization/Transfer_Learning_param_tests/TL_VGG16_unfrozen_224.png")
+        st.write("\n")
+
+        # Summary of metrics
+        st.markdown("**Metrics summary**")
+        data2 = {
+        'Model': [
+            'VGG16 unfrozen', 'VGG16 partly frozen', 'VGG16 unfrozen lr 10E-4', 'VGG16 unfrozen size 224x224'
+        ],
+        'Accuracy': [0.03, 0.99, 0.99, 1.00],
+        'Loss': [3.64, 0.04, 0.05, 0.00],
+        'Val-accuracy': [0.03, 0.96, 0.96, 1.00],
+        'Val-loss': [3.64, 0.15, 0.14, 0.01],
+        'Test Prediction Accuracy': [0.09, 0.88, 0.97, 0.97]
+        }
+        # Create DataFrame with the updated values
+        df2 = pd.DataFrame(data2)
+        df2.set_index ('Model', inplace=True)       
+        st.dataframe(df2)
+        st.write("\n")
+        st.write("\n")
+
+
+        st.markdown("""<span style='color: red;'>*Following the initial parameters used to previously train the VGG16 model provides a dramatic improvement.</span>""", unsafe_allow_html=True)
+        st.write("\n")
+        st.write("\n")
+
+
+
 
     with tab3: # Pre-trained models with Pytorch (Yannik)
         st.write("")

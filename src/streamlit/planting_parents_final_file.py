@@ -5,10 +5,21 @@ import numpy as np
 import json
 from PIL import Image
 import tensorflow as tf
+import torch
+from torchvision import transforms
+import torch.nn as nn
+import torchvision.models as models
 
 # Function to load Keras model
 def load_keras_model(file_path):
     return tf.keras.models.load_model(file_path)
+
+# Function to load PyTorch model
+def load_pytorch_model(file_path):
+    model = CustomResNet50(num_classes=38)
+    model.load_state_dict(torch.load(file_path))
+    model.eval()
+    return model
 
 # Load class indices from a JSON file
 def load_class_indices(file_path="src/streamlit/class_indices.json"):
@@ -21,6 +32,9 @@ def preprocess_image(image, target_size=(256, 256)):
     image_array = np.array(image) / 255.0
     image_array = np.expand_dims(image_array, axis=0)
     return image_array
+
+# Custom ResNet50 class to define our TL architecture
+
 
 # Load the CSV file into a DataFrame
 df = pd.read_csv("src/streamlit/plant_dataset.csv")
@@ -184,15 +198,15 @@ elif page == pages[6]:
             model = load_keras_model(model_path)
             predictions = model.predict(preprocessed_image)
             predicted_idx = np.argmax(predictions, axis=1)[0]
-            # predicted_label = indices2labels[predicted_idx]
-        # elif selected_model_file.endswith(".pth"):
-        #     model = load_pytorch_model(model_path)
-        #     transform = transforms.Compose([
-        #         transforms.Resize((224, 224)),
-        #         transforms.ToTensor(),
-        #     ])
-        #     torch_image = transform(image).unsqueeze(0)
-        #     predictions = model(torch_image).detach().numpy()
+        elif selected_model_file.endswith(".pth"):
+            model = load_pytorch_model(model_path)
+            transform = transforms.Compose([
+                transforms.Resize((256, 256)),
+                transforms.ToTensor(),
+            ])
+            torch_image = transform(image).unsqueeze(0)
+            predictions = model(torch_image).detach().numpy()
+            predicted_idx = np.argmax(predictions, axis=1)[0]
 
         # Load class indices
         class_indices = load_class_indices()

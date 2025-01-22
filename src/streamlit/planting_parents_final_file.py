@@ -88,9 +88,33 @@ It includes multiple subfolders; Train, Valid and Test. These subfolders contain
 
 
 elif page == pages[2]:
-    st.write("### 1st paragraph")
-    st.write("### 2nd paragraph")
+    
+    st.write("#### Data Exploration")
 
+    tab1, tab2, tab3, tab4 = st.tabs(["General distribution", "Train vs validation ditribution", "Confusion matrix", "Data Transformation"])
+
+
+    with tab1:
+        st.write("The data shows a reasonable inbalance with the tomato class, but the number of total images for the other categories is high enough to use all of them for the modelling.")
+        st.markdown("- Species")
+        st.markdown("- Diseases")
+    
+
+    with tab2:
+        
+        st.markdown("- Species")
+        st.markdown("- Diseases")
+        st.write("\n")
+
+    with tab3:
+        st.write("Confusion matrix between species and diseases")
+
+    with tab4:
+        st.write("The data can be filtered in order to remove background or detect edges")
+        st.markdown("1. Thresholding")
+        
+
+        st.markdown("2. Canny filtering")
 
 ####################
 # MODEL TRAINING   #

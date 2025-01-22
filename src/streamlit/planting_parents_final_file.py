@@ -112,7 +112,7 @@ elif page == pages[2]:
     with tab4:
         st.write("The data can be filtered in order to remove background or detect edges")
         st.markdown("1. Thresholding")
-        
+        #
 
         st.markdown("2. Canny filtering")
 

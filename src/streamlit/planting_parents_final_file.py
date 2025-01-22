@@ -18,7 +18,7 @@ page = st.sidebar.radio("Go to", pages)
 if page == pages[0]:
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        st.image("src/visualization/Planting_parents_logo.png", use_column_width=True)
+        st.image("src/visualization/Planting_parents_logo.png", use_container_width=True)
         st.header("Introduction")
         st.write("Welcome to the site of the Planting Parents, where we have trained an AI model to recognise 14 different species of plants and whether they are sick or healthy by analysing 20 plant diseases."
              " We're a group of young parents who value life and share an interest in growing plant life as well. It has been a great and rewarding challenge to present to you this app with our findings and results." 
@@ -54,14 +54,14 @@ It includes multiple subfolders; Train, Valid and Test. These subfolders contain
         st.write("\n", "Data Frame shape:", "\n", df.shape, "\n")
         st.write("All images have 256 * 256 as their image size.")
         st.write("In the below table overview you'll find all the names of the plant species and plant diseases: ")
-        st.image("src/visualization/Plants_&_Diseases_count.png", use_column_width=True)
+        st.image("src/visualization/Data_Exploration/Plants_&_Diseases_count.png", use_container_width=True)
     
     with tab2: # Plants & diseases
         st.write("")
-        st.image("src/visualization/diseased_plant_samples.png")
+        st.image("src/visualization/Data_Exploration/diseased_plant_samples.png")
 
         st.write("")
-        st.image("src/visualization/healthy_plant_samples.png")
+        st.image("src/visualization/Data_Exploration/healthy_plant_samples.png")
 
     with tab3: # Pre-processing steps
         st.write(""" As for the preprocessing phase we followed these steps to get to the analysis and visualisation phase of the files:
@@ -149,19 +149,7 @@ elif page == pages[3]:
         st.markdown("· EfficientNetV2")
         st.write("\n")
 
-        
-
-
-        # All layers frozen (Niels)
-        st.write("### **All layers frozen**")
-
-
-
-        
-        # LAYER UNFREEZING (Lara)
-        st.write("### **Unfreezing of layers**")
-
-        # Parameters
+                # Parameters
         st.write("**Parameters**")
         params = {
         'Dataset size': ['70K'],
@@ -179,6 +167,67 @@ elif page == pages[3]:
         st.markdown(parameters.style.hide(axis="index").to_html(), unsafe_allow_html=True)
         st.write("\n")
         st.write("\n")
+
+        # All layers frozen (Niels)
+        st.write("### **All layers frozen**")
+        
+        # MobileNetV2
+        st.markdown("<h2 style='text-align: center; color: green;'>MobileNetV2 </h2>", unsafe_allow_html=True)
+        st.markdown("""<div style='text-align: center;'>Metrics history</div>""", unsafe_allow_html=True)
+        st.image("src/visualization/Frozen_TL/MobileNetV2_13-01-2025_Niels.png")
+        st.write("\n")
+
+        # VGG16
+        st.markdown("<h2 style='text-align: center; color: green;'>VGG16 </h2>", unsafe_allow_html=True)
+        st.markdown("""<div style='text-align: center;'>Metrics history</div>""", unsafe_allow_html=True)
+        st.image("src/visualization/Frozen_TL/TL_VGG16_13-01-2025_Niels.png")
+        st.write("\n")
+
+        # ResNet 101
+        st.markdown("<h2 style='text-align: center; color: green;'>ResNet 101 </h2>", unsafe_allow_html=True)
+        st.markdown("""<div style='text-align: center;'>Metrics history</div>""", unsafe_allow_html=True)
+        st.image("src/visualization/Frozen_TL/ResNet101_13-01-2025_Niels.png")
+        st.write("\n")
+        
+        # ResNet 50
+        st.markdown("<h2 style='text-align: center; color: green;'>ResNet 50 </h2>", unsafe_allow_html=True)
+        st.markdown("""<div style='text-align: center;'>Metrics history</div>""", unsafe_allow_html=True)
+        st.image("src/visualization/Frozen_TL/ResNet50_17-01-2025_Niels.png")
+        st.markdown("""<span style='color: red;'>*Only 10 epochs were run on this model</span>""", unsafe_allow_html=True)
+        st.write("\n")
+
+        # EfficientNetV2-L
+        st.markdown("<h2 style='text-align: center; color: green;'>EfficientNetV2-L </h2>", unsafe_allow_html=True)
+        st.markdown("""<div style='text-align: center;'>Metrics history</div>""", unsafe_allow_html=True)
+        st.image("src/visualization/Frozen_TL/EfficientNetV2L_Niels_13.01.2025.png")
+        st.markdown("""<span style='color: red;'>*Only 22 epochs were run on this model</span>""", unsafe_allow_html=True)
+        st.write("\n")
+
+        # Summary of metrics
+        st.markdown("**Metrics summary**")
+        data = {
+        'Model': [
+        'MobileNetV2', 'VGG16', 
+        'ResNet 101', 'ResNet 50', 'EfficientNetV2-L'
+        ],
+        'Accuracy': [0.99, 0.97, 0.51, 0.39, 0.26],
+        'Loss': [0.08, 0.09, 1.60, 2.00, 2.58],
+        'Val-accuracy': [0.97, 0.96, 0.56, 0.48, 0.39],
+        'Val-loss': [0.23, 0.14, 1.51, 1.75, 2.08],
+        'Test Prediction Accuracy': [0.97, 0.97, "n.d.", "n.d.", "n.d."]
+        }
+
+        # Create DataFrame with the updated values
+        df = pd.DataFrame(data)
+        df.set_index ('Model', inplace=True)       
+        st.dataframe(df)
+        st.write("\n")
+        st.write("\n")
+
+
+
+        # LAYER UNFREEZING (Lara)
+        st.write("### **Unfreezing of layers**")
 
         # MobileNetV2
         st.markdown("<h2 style='text-align: center; color: black;'>MobileNetV2 </h2>", unsafe_allow_html=True)

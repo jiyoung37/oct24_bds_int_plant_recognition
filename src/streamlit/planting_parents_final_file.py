@@ -95,26 +95,35 @@ elif page == pages[2]:
 
 
     with tab1:
-        st.write("The data shows a reasonable inbalance with the tomato class, but the number of total images for the other categories is high enough to use all of them for the modelling.")
         st.markdown("- Species")
+        st.image("src/visualization/Data_Exploration/DExp_species_distribution.png")
+
         st.markdown("- Diseases")
+        st.image("src/visualization/Data_Exploration/DExp_diseases_distribution.png")
     
+        st.markdown("""<span style='color: red;'>*The data shows a reasonable inbalance with the tomato class, but the number of total images for the other categories is high enough to use all of them for the modelling.</span>""", unsafe_allow_html=True)
 
     with tab2:
         
         st.markdown("- Species")
+        st.image("src/visualization/Data_Exploration/Dexp_TrainValid_species.png")
+
         st.markdown("- Diseases")
-        st.write("\n")
+        st.image("src/visualization/Data_Exploration/DExp_TrainValid_diseases.png")
 
     with tab3:
         st.write("Confusion matrix between species and diseases")
+        st.image("src/visualization/Data_Exploration/DExp_CM_species_diseases.png")
+        st.markdown("""<span style='color: red;'>*Some species do not contain any disease examples and some species do not contain healthy examples.</span>""", unsafe_allow_html=True)
+
 
     with tab4:
         st.write("The data can be filtered in order to remove background or detect edges")
         st.markdown("1. Thresholding")
-        #
+        st.image("src/visualization/Data_Exploration/DExp_thresholding_filter.png")
 
         st.markdown("2. Canny filtering")
+        st.image("src/visualization/Data_Exploration/DExp_Canny_filter.png")
 
 ####################
 # MODEL TRAINING   #

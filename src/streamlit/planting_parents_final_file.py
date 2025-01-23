@@ -9,7 +9,7 @@ df = pd.read_csv("src/streamlit/plant_dataset.csv")
 
 # sidebar and page navigation
 st.sidebar.title("Table of contents")
-pages = ["Home", "Data overview", "Data exploration", "Model Training", "Model Interpretability", "Conclusion", "Predict your plant"]
+pages = ["Home", "Data overview", "Data exploration", "Model: CNN","Model: Transfer Learning", "Model Interpretability", "Conclusion", "Predict your plant"]
 page = st.sidebar.radio("Go to", pages)
 
 # set a dynamic title for each page
@@ -131,9 +131,9 @@ elif page == pages[2]:
 
 
 elif page == pages[3]:
-    st.write("### Model Training")
+    st.write("### Model: CNN")
     
-    tab1, tab2, tab3 = st.tabs(["Baseline CNN's", "Transfer Learning", "Pre-trained PyTorch"])
+    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["CNN", "Dataset size", "Image size", "Learning rate", "Augmentation", "CNN layer"])
 
 
     with tab1: # Baseline CNN's (Ji)
@@ -176,43 +176,110 @@ elif page == pages[3]:
         # Option 1
         col1, col2 = st.columns(2)
         with col1:
-            st.image("Model-architecture_CNN-2.png", use_container_width=True)
+            st.image("src/visualization/CNN/Model-architecture_CNN-2.png", use_container_width=True)
         with col2:
-            st.image("Model-architecture_CNN-3.png", use_container_width=True)
+            st.image("src/visualization/CNN/Model-architecture_CNN-3.png", use_container_width=True)
         # Option 2
         # st.image("Model-architecture_CNN-2.png", use_container_width=True)
         # st.image("Model-architecture_CNN-3.png", use_container_width=True)
 
-############### Tab 1 - subtab ##################
-        # subtab
-        sub_tab = st.radio("Test parameters", 
-                           ["Dataset size", "Image size", "Learning rate", "Augmentation","CNN layer"])
-############### Tab 1 - subtab 1 ##################        
-        if sub_tab == "Dataset size":
-            st.write("In this section, we tested different pre-trained models")
-            st.image("1_CNN_Dataset_graph+cm.png", use_container_width=True)
-############### Tab 1 - subtab 2 ##################   
-        elif sub_tab == "Image size":
-            st.write("In this section, we tested different image sizes.")
-############### Tab 1 - subtab 3 ##################  
-        elif sub_tab == "Learning rate":
-            st.write("In this section, we experimented with different learning rates.")
-############### Tab 1 - subtab 4 ##################  
-        elif sub_tab == "Augmentation":
-            st.write("In this section, we tested various data augmentation techniques.")
-############### Tab 1 - subtab 5 ##################  
-        elif sub_tab == "CNN layer":
-            st.write("In this section, we tested various data augmentation techniques.")
-
-
-
-############### Tab 2 ##################
-    with tab2: # Transfer Learning (Niels and Lara)
+    with tab2:
         st.write("In this section, we tested different pre-trained models")
-        st.write("")
+        st.image("src/visualization/CNN/1_CNN_Dataset_table.png", use_container_width=True)
+        st.image("src/visualization/CNN/1_CNN_Dataset_graph+cm.png", use_container_width=True)
 
+        with st.popover("Confusion matrix"):
+            st.image("src/visualization/CNN/1_CNN_Dataset_table.png", use_container_width=True)
 
-    with tab2: # Transfer Learning
+        container = st.container(border=True)
+        container.write("this is summary")
+
+    with tab3:
+        st.write("In this section, we tested different image sizes.")
+        st.image("src/visualization/CNN/2_CNN_Image-size_table.png", use_container_width=True)
+        st.image("src/visualization/CNN/2_CNN_Image-size_graph.png", use_container_width=True)
+
+        with st.popover("Confusion matrix"):
+            st.image("src/visualization/CNN/1_CNN_Dataset_table.png", use_container_width=True)
+
+        container = st.container(border=True)
+        container.write("this is summary")
+      
+# ############## Tab 1 - subtab ##################
+#         # subtab
+#         # Initialize session state for sub-tab
+#         if "sub_tab" not in st.session_state:
+#             st.session_state.sub_tab = "Dataset size"  # Default sub-tab
+        
+#         st.session_state.sub_tab = st.radio(
+#          "Test parameters",
+#          ["Dataset size", "Image size", "Learning rate", "Augmentation", "CNN layer"],
+#          index=["Dataset size", "Image size", "Learning rate", "Augmentation", "CNN layer"].index(st.session_state.sub_tab)
+#         )
+
+#         #sub_tab = st.radio("Test parameters",    ["Dataset size", "Image size", "Learning rate", "Augmentation","CNN layer"])
+# ############### Tab 1 - subtab 1 ##################        
+#         if st.session_state.sub_tab == "Dataset size":
+#             st.write("In this section, we tested different pre-trained models")
+#             st.image("src/visualization/CNN/1_CNN_Dataset_table.png", use_container_width=True)
+#             st.image("src/visualization/CNN/1_CNN_Dataset_graph+cm.png", use_container_width=True)
+
+#             with st.popover("Confusion matrix"):
+#                 st.image("src/visualization/CNN/1_CNN_Dataset_table.png", use_container_width=True)
+
+#             container = st.container(border=True)
+#             container.write("this is summary")
+# ############### Tab 1 - subtab 2 ##################   
+#         elif st.session_state.sub_tab == "Image size":
+#             st.write("In this section, we tested different image sizes.")
+#             st.image("src/visualization/CNN/2_CNN_Image-size_table", use_container_width=True)
+#             st.image("src/visualization/CNN/2_CNN_Image-size_graph", use_container_width=True)
+
+#             with st.popover("Confusion matrix"):
+#                 st.image("src/visualization/CNN/1_CNN_Dataset_table.png", use_container_width=True)
+
+#             container = st.container(border=True)
+#             container.write("this is summary")
+# ############### Tab 1 - subtab 3 ##################  
+#         elif st.session_state.sub_tab == "Learning rate":
+#             st.write("In this section, we experimented with different learning rates.")
+#             st.image("src/visualization/CNN/3_CNN_Learningrate_table", use_container_width=True)
+#             st.image("src/visualization/CNN/3_CNN_Learningrate_graph", use_container_width=True)
+
+#             with st.popover("Confusion matrix"):
+#                 st.image("src/visualization/CNN/1_CNN_Dataset_table.png", use_container_width=True)
+                
+#             container = st.container(border=True)
+#             container.write("this is summary")
+# ############### Tab 1 - subtab 4 ##################  
+#         elif st.session_state.sub_tab == "Augmentation":
+#             st.write("In this section, we tested various data augmentation techniques.")
+#             st.image("src/visualization/CNN/4_CNN_Augmentation_table", use_container_width=True)
+#             st.image("src/visualization/CNN/4_CNN_Augmentation_graph", use_container_width=True)
+
+#             with st.popover("Confusion matrix"):
+#                 st.image("src/visualization/CNN/1_CNN_Dataset_table.png", use_container_width=True)
+                
+#             container = st.container(border=True)
+#             container.write("this is summary")
+# ############### Tab 1 - subtab 5 ##################  
+#         elif st.session_state.sub_tab == "CNN layer":
+#             st.write("In this section, we tested various data augmentation techniques.")
+#             st.image("src/visualization/CNN/5_CNN_layer_table", use_container_width=True)
+#             st.image("src/visualization/CNN/5_CNN_layer_graph", use_container_width=True)
+
+#             with st.popover("Confusion matrix"):
+#                 st.image("src/visualization/CNN/1_CNN_Dataset_table.png", use_container_width=True)
+                
+#             container = st.container(border=True)
+#             container.write("this is summary")
+
+elif page == pages[4]:
+    st.write("### Model: Transfer Learning")
+    
+    tab1, tab2 = st.tabs(["Transfer Learning", "Pre-trained PyTorch"])
+
+    with tab1: # Transfer Learning
         st.write("**Pre-trained models**")
         st.markdown("· MobileNetV2")
         st.markdown("· VGG16")
@@ -417,7 +484,7 @@ elif page == pages[3]:
 
 
 
-    with tab3: # Pre-trained models with Pytorch (Yannik)
+    with tab2: # Pre-trained models with Pytorch (Yannik)
         st.write("")
 
 ####################
@@ -425,7 +492,7 @@ elif page == pages[3]:
 ####################
 
 
-elif page == pages[4]:
+elif page == pages[5]:
     st.write("### Model Interpretability")
     st.write("Yanniks Todo's:")
     st.checkbox("Why interpretability matters ")
@@ -439,7 +506,7 @@ elif page == pages[4]:
 ####################
 
 
-elif page == pages[5]:
+elif page == pages[6]:
     st.write("### Conclusion")
     st.write("### 1st paragraph")
     st.write("### 2nd paragraph")
@@ -450,7 +517,7 @@ elif page == pages[5]:
 ####################
 
 
-elif page == pages[6]:
+elif page == pages[7]:
     st.write("### Upload an image to predict the plant type")
     st.write("This subpage should contain the actual app. Here, the user should chose")
     st.checkbox("between different models")

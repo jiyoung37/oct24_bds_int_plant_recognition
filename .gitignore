@@ -167,3 +167,8 @@ data/
 
 # .DS_store MacOS files
 .DS_store
+
+# Temporarily igonre all model files
+*.keras
+*.pth
+*.h5

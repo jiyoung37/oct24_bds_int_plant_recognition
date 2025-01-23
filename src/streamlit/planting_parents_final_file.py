@@ -2,9 +2,15 @@ import streamlit as st
 import os
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 import json
 from PIL import Image
+
 import tensorflow as tf
+import tensorflow.keras.backend as K
+from tensorflow.keras.models import Model
+from tensorflow.keras.preprocessing.image import img_to_array, array_to_img
+
 import torch
 from torchvision import transforms
 import torch.nn as nn
@@ -34,7 +40,90 @@ def preprocess_image(image, target_size=(256, 256)):
     return image_array
 
 # Custom ResNet50 class to define our TL architecture
+class CustomResNet50(nn.Module):
+    def __init__(self, num_classes):
+        super(CustomResNet50, self).__init__()
 
+        # Initialize the base model without pre-trained weights
+        self.base_model = models.resnet50(pretrained=False)
+        
+        # Modify the final fully connected layer to match the pre-trained model from the .pth file
+        num_ftrs = self.base_model.fc.in_features
+        self.base_model.fc = nn.Linear(num_ftrs, 120)
+        
+        # Initialize the base model and load custom weights
+        state_dict = torch.load('src/models/model_src/ResNet50-Plant-model-80.pth', map_location=torch.device('cpu'))
+        self.base_model.load_state_dict(state_dict)
+        
+        # Modify the classifier
+        num_ftrs = self.base_model.fc.in_features
+        self.base_model.fc = nn.Identity()  # Remove the original FC layer
+        
+        self.classifier = nn.Sequential(
+            nn.Linear(num_ftrs, 1024),
+            nn.ReLU(),
+            nn.Dropout(0.2),
+            nn.Linear(1024, 512),
+            nn.ReLU(),
+            nn.Dropout(0.2),
+            nn.Linear(512, num_classes)
+        )
+
+    def forward(self, x):
+        x = self.base_model(x)
+        x = self.classifier(x)  # Return raw logits
+        return x
+
+
+# Grad-CAM function for Keras
+def generate_grad_cam(model, image):
+    # Convert the image to a NumPy array
+    img_array = img_to_array(image) / 255.0
+    img_array = np.expand_dims(img_array, axis=0)
+
+    # Get the model's last convolutional layer
+    last_conv_layer = None
+    for layer in model.layers[::-1]:
+        if isinstance(layer, tf.keras.layers.Conv2D):
+            last_conv_layer = layer
+            break
+
+    if last_conv_layer is None:
+        raise ValueError("No convolutional layer found in the model.")
+    
+    grad_model = Model(inputs=model.input, outputs=[last_conv_layer.output, model.output])
+
+    # Compute the gradient of the top predicted class with respect to the feature map
+    with tf.GradientTape() as tape:
+        conv_outputs, predictions = grad_model(img_array)
+        predicted_class = tf.argmax(predictions[0])
+        loss = predictions[:, predicted_class]
+
+    # Calculate gradients
+    grads = tape.gradient(loss, conv_outputs)[0]
+
+    # Compute the importance weights
+    pooled_grads = tf.reduce_mean(grads, axis=(0, 1, 2))
+
+    # Apply the weights to the convolutional outputs
+    conv_outputs = conv_outputs[0]
+    heatmap = tf.reduce_sum(pooled_grads * conv_outputs, axis=-1)
+
+    # Normalize the heatmap
+    heatmap = tf.maximum(heatmap, 0) / tf.math.reduce_max(heatmap)
+    heatmap = heatmap.numpy()
+
+    # Resize the heatmap to match the input image size
+    heatmap = np.uint8(255 * heatmap)
+    heatmap = Image.fromarray(heatmap).resize(image.size, resample=Image.BILINEAR)
+
+    # Convert heatmap to RGBA and overlay on the original image
+    heatmap = np.array(heatmap)
+    colormap = plt.cm.jet(heatmap / 255.0)[:, :, :3]  # Apply colormap
+    overlay = (colormap * 255).astype(np.uint8)
+    overlay_image = Image.blend(image.convert("RGBA"), Image.fromarray(overlay).convert("RGBA"), alpha=0.5)
+
+    return overlay_image
 
 # Load the CSV file into a DataFrame
 df = pd.read_csv("src/streamlit/plant_dataset.csv")
@@ -299,7 +388,30 @@ elif page == pages[3]:
 
 
     with tab3: # Pre-trained models with Pytorch (Yannik)
+        plantpad_url = "http://plantpad.samlab.cn"
+        st.write("""We used a pre-trained model from [www.plantpad.samlab.cn](%s) which provides models for plant disease diagnosis.
+                 These models have been trained on image data (421,314 images) consisting of 63 plant species and 310 kinds of plant diseases. 
+                 We employed a ResNet50 model for transfer learning by using it as the base model for feature extraction on which we added a 3-layer classifier CNN.""" % plantpad_url)
         st.write("")
+        st.write("")
+        st.write("We again used the same inital training parameters as for the TL models in Keras and kept the base model layers frozen:")
+        st.markdown(parameters.style.hide(axis="index").to_html(), unsafe_allow_html=True)
+        st.write("")
+        st.write("")
+        st.write("")
+        st.image("src/visualization/Transfer_Learning_PyTorch_ResNet50/ResNet50_all-frozen_lr-1e-3.png")
+        st.write("")
+        st.write("")
+        st.write("""Although the training and validation accuracies are above 0.98, the validation loss shows high fluctuations instead
+                 of decreasing. This suggests that the model is not learning properly. As a next step, we decreased the learning rate to 1e-4.""")
+        st.write("")
+        st.write("")
+        st.image("src/visualization/Transfer_Learning_PyTorch_ResNet50/ResNet50_all-frozen_lr-1e-4.png")
+        st.write("")
+        st.write("")
+        st.write("""Lowering the learning rate improves the validation loss on an absolute scale but the fluctuations during training 
+                 are still observable. This raises the question wether the architecture itself 
+""")
 
 ####################
 # MODEL INTERPRET  #
@@ -375,6 +487,15 @@ elif page == pages[6]:
         st.subheader("Model Prediction")
         # st.write(predictions)
         st.write(class_indices[str(predicted_idx)])
-        # st.write(predicted_classes)
+
+        # Generate and display Grad-CAM if selected
+        if display_grad_cam:
+            st.subheader("Grad-CAM Visualization")
+
+        gradcam_model_path = os.path.join("src/models/plain_models", selected_model_file)
+        if selected_model_file.endswith(".keras"):
+            gradcam_model = load_keras_model(model_path)
+            grad_cam_image = generate_grad_cam(gradcam_model, image)
+            st.image(grad_cam_image, caption="Grad-CAM", use_container_width=True)
 
     

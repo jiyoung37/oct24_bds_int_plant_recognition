@@ -76,48 +76,53 @@ class CustomResNet50(nn.Module):
 
 
 # Grad-CAM function for Keras
-def generate_grad_cam(model, image):
-    # Convert the image to a NumPy array
-    img_array = img_to_array(image) / 255.0
+def generate_grad_cam(model, image, layer_name=None):
+    # Automatically detect the input size of the model
+    input_shape = model.input_shape[1:3]  # Get height and width of the input layer
+
+    # Resize the input image to match the model's input size
+    resized_image = image.resize(input_shape)
+    img_array = img_to_array(resized_image) / 255.0
     img_array = np.expand_dims(img_array, axis=0)
 
-    # Get the model's last convolutional layer
-    last_conv_layer = None
-    for layer in model.layers[::-1]:
-        if isinstance(layer, tf.keras.layers.Conv2D):
-            last_conv_layer = layer
-            break
+    # If layer_name is not provided, find the last convolutional layer
+    if not layer_name:
+        layer_name = next(
+            (layer.name for layer in model.layers[::-1] if isinstance(layer, tf.keras.layers.Conv2D)),
+            None
+        )
+        if not layer_name:
+            raise ValueError("No convolutional layer found in the model.")
 
-    if last_conv_layer is None:
-        raise ValueError("No convolutional layer found in the model.")
-    
-    grad_model = Model(inputs=model.input, outputs=[last_conv_layer.output, model.output])
+    # Create a model that maps inputs to activations of the target layer and model output
+    grad_model = Model(inputs=model.input, outputs=[model.get_layer(layer_name).output, model.output])
 
-    # Compute the gradient of the top predicted class with respect to the feature map
+    # Record operations for automatic differentiation
     with tf.GradientTape() as tape:
         conv_outputs, predictions = grad_model(img_array)
         predicted_class = tf.argmax(predictions[0])
         loss = predictions[:, predicted_class]
 
-    # Calculate gradients
-    grads = tape.gradient(loss, conv_outputs)[0]
-
-    # Compute the importance weights
+    # Compute the gradient of the loss with respect to the feature map
+    grads = tape.gradient(loss, conv_outputs)
     pooled_grads = tf.reduce_mean(grads, axis=(0, 1, 2))
 
-    # Apply the weights to the convolutional outputs
+    # Compute the Grad-CAM heatmap
     conv_outputs = conv_outputs[0]
     heatmap = tf.reduce_sum(pooled_grads * conv_outputs, axis=-1)
 
     # Normalize the heatmap
-    heatmap = tf.maximum(heatmap, 0) / tf.math.reduce_max(heatmap)
+    heatmap = tf.maximum(heatmap, 0)
+    max_value = tf.reduce_max(heatmap)
+    if max_value > 0:
+        heatmap /= max_value
     heatmap = heatmap.numpy()
 
-    # Resize the heatmap to match the input image size
+    # Resize the heatmap to the original image size
     heatmap = np.uint8(255 * heatmap)
     heatmap = Image.fromarray(heatmap).resize(image.size, resample=Image.BILINEAR)
 
-    # Convert heatmap to RGBA and overlay on the original image
+    # Overlay the heatmap on the image
     heatmap = np.array(heatmap)
     colormap = plt.cm.jet(heatmap / 255.0)[:, :, :3]  # Apply colormap
     overlay = (colormap * 255).astype(np.uint8)
@@ -449,9 +454,6 @@ elif page == pages[6]:
     # Dropdown menu for selecting a trained model
     model_files = [f for f in os.listdir("src/models/") if f.endswith(".keras") or f.endswith(".pth")]
     selected_model_file = st.selectbox("Select a trained model:", model_files)
-    
-    # Checkbox for Grad-CAM
-    display_grad_cam = st.checkbox("Display Grad-CAM")
 
     # Drag-and-drop file uploader for image
     uploaded_file = st.file_uploader("Upload an image:", type=["jpg", "jpeg", "png"])
@@ -459,7 +461,7 @@ elif page == pages[6]:
     if uploaded_file is not None:
         # Display uploaded image
         image = Image.open(uploaded_file)
-        st.image(image, caption="Uploaded Image", use_container_width=True)
+        st.image(image, caption="Uploaded Image",  width=300)
 
         # Preprocess the image
         preprocessed_image = preprocess_image(image)
@@ -488,14 +490,18 @@ elif page == pages[6]:
         # st.write(predictions)
         st.write(class_indices[str(predicted_idx)])
 
-        # Generate and display Grad-CAM if selected
-        if display_grad_cam:
-            st.subheader("Grad-CAM Visualization")
+    # Checkbox for Grad-CAM
+    display_grad_cam = st.checkbox("Display Grad-CAM")
 
-        gradcam_model_path = os.path.join("src/models/plain_models", selected_model_file)
+    # Generate and display Grad-CAM if selected
+    if display_grad_cam:
+        st.subheader("Grad-CAM Visualization")
+
+        gradcam_model_path = f"src/models/plain_architectures/plain_{selected_model_file}"
         if selected_model_file.endswith(".keras"):
-            gradcam_model = load_keras_model(model_path)
-            grad_cam_image = generate_grad_cam(gradcam_model, image)
-            st.image(grad_cam_image, caption="Grad-CAM", use_container_width=True)
+            gradcam_model = load_keras_model(gradcam_model_path)
+            # gradcam_model.summary(print_fn=lambda x: st.text(x))
+            grad_cam_image = generate_grad_cam(gradcam_model, image, layer_name=None)
+            st.image(grad_cam_image, caption="Grad-CAM", width=300)
 
     

@@ -276,10 +276,11 @@ elif page == pages[3]:
 
 elif page == pages[4]:
     st.write("### Model: Transfer Learning")
-    
-    tab1, tab2 = st.tabs(["Transfer Learning", "Pre-trained PyTorch"])
 
-    with tab1: # Transfer Learning
+    tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(["Transfer Learning", "All layers frozen", "Unfreezing of layers","Learning rate", "Image size", "Fine tuning", "Pre-trained PyTorch"])
+    
+    with tab1:
+        st.write("After the basic CNN modelling, we incorporated pretrained models into our training that were already designed to be used in visual object recognitions. We considered some of teh most common models and applied different parameter tuning to the ones tha gave the best resu")
         st.write("**Pre-trained models**")
         st.markdown("· MobileNetV2")
         st.markdown("· VGG16")
@@ -287,9 +288,8 @@ elif page == pages[4]:
         st.markdown("· ResNet 50")
         st.markdown("· EfficientNetV2")
         st.write("\n")
-
-                # Parameters
-        st.write("**Parameters**")
+        # Parameters
+        st.write("**Initial Parameters**")
         params = {
         'Dataset size': ['70K'],
         'Augmentation': ['No'],
@@ -302,13 +302,17 @@ elif page == pages[4]:
 
         # Create DataFrame
         parameters = pd.DataFrame(params)
-        
         st.markdown(parameters.style.hide(axis="index").to_html(), unsafe_allow_html=True)
         st.write("\n")
         st.write("\n")
+        st.write("\n")
+        st.write("\n")
 
-        # All layers frozen (Niels)
-        st.write("### **All layers frozen**")
+    
+
+    with tab2: # Transfer Learning  # All layers frozen (Niels)
+             
+        st.write("In this section, we started training our models with all the layers from the pretrained models kept frozen, thus, the weights were preserved along the whole training.")         
         
         # MobileNetV2
         st.markdown("<h2 style='text-align: center; color: green;'>MobileNetV2 </h2>", unsafe_allow_html=True)
@@ -363,13 +367,11 @@ elif page == pages[4]:
         st.write("\n")
         st.write("\n")
 
-
-
-        # LAYER UNFREEZING (Lara)
-        st.write("### **Unfreezing of layers**")
-
+    with tab3: # LAYER UNFREEZING (Lara)
+        
+        st.write("After considering the performance of the various pre-trained models, we picked the best two models (MobileNetV2 and VGG16) to analyse further how unfreezing layers affects the performance of the classification. In this section, we first unfroze all layers of the pre-trained model and after that, we repeated the training, but only unfreezing the last block of layers and compared performance.")         
         # MobileNetV2
-        st.markdown("<h2 style='text-align: center; color: black;'>MobileNetV2 </h2>", unsafe_allow_html=True)
+        st.markdown("<h2 style='text-align: center; color: green;'>MobileNetV2 </h2>", unsafe_allow_html=True)
         st.markdown("**1) All layers unfrozen**")
         st.markdown("""<div style='text-align: center;'>Metrics history</div>""", unsafe_allow_html=True)
         st.image("src/visualization/Transfer_Learning_param_tests/TL_MobileNet_unfrozen.png")
@@ -390,12 +392,10 @@ elif page == pages[4]:
         st.markdown("""<div style='text-align: center;'>Confusion matrix</div>""", unsafe_allow_html=True)
         st.image("src/visualization/Transfer_Learning_param_tests/TL_MobileNet_1Block_unfrozen_CM.png")
         st.write("\n")
-        st.markdown("""<span style='color: red;'>*No significant change between both trainings</span>""", unsafe_allow_html=True)
         st.write("\n")
 
         # VGG16
-        st.markdown("<h2 style='text-align: center; color: black;'>VGG16 </h2>", unsafe_allow_html=True)
-    
+        st.markdown("<h2 style='text-align: center; color: green;'>VGG16 </h2>", unsafe_allow_html=True)
         st.markdown("**1) All layers unfrozen**")
         st.markdown("""<div style='text-align: center;'>Metrics history</div>""", unsafe_allow_html=True)
         st.image("src/visualization/Transfer_Learning_param_tests/TL_VGG16_unfrozen.png")
@@ -415,8 +415,6 @@ elif page == pages[4]:
                 
         st.markdown("""<div style='text-align: center;'>Confusion matrix</div>""", unsafe_allow_html=True)
         st.image("src/visualization/Transfer_Learning_param_tests/TL_VGG16_1Block_unfrozen_CM.png")
-        st.write("\n")
-        st.markdown("""<span style='color: red;'>*Clear improvement when only the last block of layers is unfrozen</span>""", unsafe_allow_html=True)
         st.write("\n")
         st.write("\n")
 
@@ -438,27 +436,37 @@ elif page == pages[4]:
         df = pd.DataFrame(data)
         df.set_index ('Model', inplace=True)       
         st.dataframe(df)
+        st.markdown("""<span style='color: red;'>Whereas there was only a small difference in the MobileNetV2 models, whether all layers were unfrozen or not, in the case of VGG16, there was a dramatic improvement when only the last block of layers is unfrozen</span>""", unsafe_allow_html=True)
         st.write("\n")
-        st.write("\n")
 
-
-
-
-        # Modification of other parameters
-        st.write("### **Parameter variation for VGG16**")
-
-        st.markdown("**1) Change of learning rate to 0.0001**")
+    with tab4:  # Modification of learning rate
+              
+        st.write("Considering the bad performance given by the model with VGG16 with all the layers unfrozen, we decided to reduce the learning rate from 0.001 to 0.0001")
+        st.markdown("<h2 style='text-align: center; color: green;'>VGG16 </h2>", unsafe_allow_html=True)
         st.markdown("""<div style='text-align: center;'>Metrics history</div>""", unsafe_allow_html=True)
         st.image("src/visualization/Transfer_Learning_param_tests/TL_VGG16_unfrozen_lr10e-4.png")
         st.write("\n")
 
-        st.markdown("**2) Change of input image size to 224x224**")
-        st.markdown("""<div style='text-align: center;'>Metrics history</div>""", unsafe_allow_html=True)
-        st.image("src/visualization/Transfer_Learning_param_tests/TL_VGG16_unfrozen_224.png")
+        st.markdown("""<div style='text-align: center;'>Confusion matrix</div>""", unsafe_allow_html=True)
+        st.image("src/visualization/Transfer_Learning_param_tests/TL_VGG16_unfrozen_lr10e-4_CM.png")
         st.write("\n")
 
-        # Summary of metrics
-        st.markdown("**Metrics summary**")
+    with tab5: # Modification of the image size
+        st.write("In this section we changed the input image size from 256x256 to 224x224 to see how this could change the training for the model with VGG16, while keeping the learning rate of 0.001, which gave the bad results.")
+        st.markdown("<h2 style='text-align: center; color: green;'>VGG16 </h2>", unsafe_allow_html=True)
+        st.markdown("""<div style='text-align: center;'>Metrics history</div>""", unsafe_allow_html=True)
+        st.image("src/visualization/Transfer_Learning_param_tests/TL_VGG16_unfrozen_224.png")
+        st.write("\n")        
+        
+        st.markdown("""<div style='text-align: center;'>Confusion matrix</div>""", unsafe_allow_html=True)
+        st.image("src/visualization/Transfer_Learning_param_tests/TL_VGG16_unfrozen_224_CM.png")
+        st.write("\n")
+
+    
+    with tab6: # Fine tuning with VGG16 
+        st.write("In this section we went deeper into the optimization of the model with VGG16. From the previous trainings we observed dramatic improvements with some parameter changes, as we see in the following table:")
+        # Summary of previous metrics
+        st.markdown("**Previous metrics summary**")
         data2 = {
         'Model': [
             'VGG16 unfrozen', 'VGG16 partly frozen', 'VGG16 unfrozen lr 10E-4', 'VGG16 unfrozen size 224x224'
@@ -475,18 +483,28 @@ elif page == pages[4]:
         st.dataframe(df2)
         st.write("\n")
         st.write("\n")
+        st.write('''
+        After learning the parameters that worked well, we decided to fine tune the modelling part until we optimized the training with VGG16.
+        The changed parameters that gave the best performance were:
+         - learning rate: 0.0001
+         - image size: 224x224
+         - unfreezing of layers in 2 steps
 
+        ''')
 
-        st.markdown("""<span style='color: red;'>*Following the initial parameters used to previously train the VGG16 model provides a dramatic improvement.</span>""", unsafe_allow_html=True)
-        st.write("\n")
-        st.write("\n")
-
-
-
-
-    with tab2: # Pre-trained models with Pytorch (Yannik)
+    with tab6: # Pre-trained models with Pytorch (Yannik)
         st.write("")
 
+
+    css = '''
+    <style>
+    .stTabs [data-baseweb="tab-list"] button [data-testid="stMarkdownContainer"] p {
+    font-size:0.82rem;
+    }
+    </style>
+    '''
+
+    st.markdown(css, unsafe_allow_html=True)
 ####################
 # MODEL INTERPRET  #
 ####################

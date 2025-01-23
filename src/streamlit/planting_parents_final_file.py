@@ -28,16 +28,38 @@ def load_pytorch_model(file_path):
     return model
 
 # Load class indices from a JSON file
-def load_class_indices(file_path="src/streamlit/class_indices.json"):
+def load_class_indices(file_path):
     with open(file_path, "r") as f:
         return json.load(f)
 
 # Function to preprocess the uploaded image
-def preprocess_image(image, target_size=(256, 256)):
-    image = image.resize(target_size)
-    image_array = np.array(image) / 255.0
-    image_array = np.expand_dims(image_array, axis=0)
-    return image_array
+def preprocess_image(image, model):
+    """
+    Preprocess an image to match the input size of the given model.
+
+    Parameters:
+        image (PIL.Image): The input image.
+        model: The trained model (Keras or PyTorch).
+
+    Returns:
+        np.ndarray: The preprocessed image array for Keras.
+        torch.Tensor: The preprocessed image tensor for PyTorch.
+    """
+    if isinstance(model, tf.keras.Model):  # For Keras models
+        input_shape = model.input_shape[1:3]  # Extract input size from the model
+        resized_image = image.resize(input_shape)
+        image_array = np.array(resized_image) / 255.0
+        image_array = np.expand_dims(image_array, axis=0)  # Add batch dimension
+        return image_array
+    elif isinstance(model, torch.nn.Module):  # For PyTorch models
+        input_size = 224  # Default input size for many PyTorch models
+        transform = transforms.Compose([
+            transforms.Resize((input_size, input_size)),  # Resize to input size
+            transforms.ToTensor(),
+        ])
+        return transform(image).unsqueeze(0)  # Add batch dimension
+    else:
+        raise ValueError("Unsupported model type. Please provide a Keras or PyTorch model.")
 
 # Custom ResNet50 class to define our TL architecture
 class CustomResNet50(nn.Module):
@@ -76,7 +98,7 @@ class CustomResNet50(nn.Module):
 
 
 # Grad-CAM function for Keras
-def generate_grad_cam(model, image, layer_name=None):
+def generate_grad_cam_keras(model, image, layer_name=None):
     # Automatically detect the input size of the model
     input_shape = model.input_shape[1:3]  # Get height and width of the input layer
 
@@ -123,6 +145,86 @@ def generate_grad_cam(model, image, layer_name=None):
     heatmap = Image.fromarray(heatmap).resize(image.size, resample=Image.BILINEAR)
 
     # Overlay the heatmap on the image
+    heatmap = np.array(heatmap)
+    colormap = plt.cm.jet(heatmap / 255.0)[:, :, :3]  # Apply colormap
+    overlay = (colormap * 255).astype(np.uint8)
+    overlay_image = Image.blend(image.convert("RGBA"), Image.fromarray(overlay).convert("RGBA"), alpha=0.5)
+
+    return overlay_image
+
+# Grad-CAM function for PyTorch
+def generate_grad_cam_pytorch(model, image, target_layer_name=None):
+    """
+    Generate Grad-CAM visualization for a PyTorch model.
+    
+    Parameters:
+        model: PyTorch model
+        image: PIL Image (input image)
+        layer_name: str (name of the target convolutional layer), if not provided the function iterates through the
+                    model's layer in reverse and finds the last Conv2d layer
+
+    Returns:
+        PIL Image with the Grad-CAM overlay
+    """
+    from torch.nn import Conv2d
+
+    # Automatically detect the last convolutional layer if target_layer_name is not provided
+    if target_layer_name is None:
+        for name, module in reversed(list(model.named_modules())):
+            if isinstance(module, Conv2d):
+                target_layer_name = name
+                break
+        if target_layer_name is None:
+            raise ValueError("No convolutional layer found in the model.")
+
+    # Transform and preprocess the image
+    transform = transforms.Compose([
+        transforms.Resize((256, 256)),  # Resize to the input size of the model
+        transforms.ToTensor(),
+    ])
+    torch_image = transform(image).unsqueeze(0)  # Add batch dimension
+
+    # Hook to capture gradients and activations
+    gradients = []
+    activations = []
+
+    def save_gradients(module, grad_input, grad_output):
+        gradients.append(grad_output[0])
+
+    def save_activations(module, input, output):
+        activations.append(output)
+
+    # Register hooks on the target layer
+    target_layer = dict(model.named_modules())[target_layer_name]
+    target_layer.register_forward_hook(save_activations)
+    target_layer.register_backward_hook(save_gradients)
+
+    # Forward pass
+    model.eval()
+    output = model(torch_image)
+    class_index = output.argmax(dim=1).item()
+
+    # Backward pass for the target class
+    model.zero_grad()
+    loss = output[0, class_index]
+    loss.backward()
+
+    # Compute Grad-CAM
+    gradients = gradients[0].detach().cpu().numpy()
+    activations = activations[0].detach().cpu().numpy()
+    weights = np.mean(gradients, axis=(2, 3))  # Global average pooling of gradients
+    grad_cam = np.zeros(activations.shape[2:], dtype=np.float32)
+    for i, w in enumerate(weights[0]):
+        grad_cam += w * activations[0, i, :, :]
+
+    grad_cam = np.maximum(grad_cam, 0)
+    grad_cam = grad_cam / grad_cam.max() if grad_cam.max() != 0 else grad_cam
+
+    # Resize heatmap to match original image size
+    grad_cam = np.uint8(255 * grad_cam)
+    heatmap = Image.fromarray(grad_cam).resize(image.size, resample=Image.BILINEAR)
+
+    # Overlay heatmap on the image
     heatmap = np.array(heatmap)
     colormap = plt.cm.jet(heatmap / 255.0)[:, :, :3]  # Apply colormap
     overlay = (colormap * 255).astype(np.uint8)
@@ -449,7 +551,14 @@ elif page == pages[5]:
 
 
 elif page == pages[6]:
+    plantpad_url = "http://plantpad.samlab.cn"
     st.write("### Predict your plant")
+    st.write("")
+    st.write("You can select between three final models:")
+    st.markdown("- ResNet50 (PyTorch) based on the pre-trained model from [www.plantpad.samlab.cn](%s)" % plantpad_url)
+    st.markdown("- VGG16 (Keras): all layers unfrozen, fine-tuned with a learning rate of 1e-5 and img size of 224x224")
+    st.markdown("- MobileNetV2 (Keras): all layers unfrozen, a learning rate of 1e-3 and img size of 256x256")
+
 
     # Dropdown menu for selecting a trained model
     model_files = [f for f in os.listdir("src/models/") if f.endswith(".keras") or f.endswith(".pth")]
@@ -463,32 +572,65 @@ elif page == pages[6]:
         image = Image.open(uploaded_file)
         st.image(image, caption="Uploaded Image",  width=300)
 
-        # Preprocess the image
-        preprocessed_image = preprocess_image(image)
-
         # Load the selected model
         model_path = os.path.join("src/models", selected_model_file)
+
+        # Calculate predictions and handle confidence probabilities
         if selected_model_file.endswith(".keras"):
             model = load_keras_model(model_path)
-            predictions = model.predict(preprocessed_image)
-            predicted_idx = np.argmax(predictions, axis=1)[0]
+            preprocessed_image = preprocess_image(image, model)
+            predictions = model.predict(preprocessed_image)  # No softmax needed
+            predicted_idx = np.argmax(predictions[0])
+            top_predictions = predictions[0].argsort()[-5:][::-1]
+            probabilities = predictions[0]  # Use raw probabilities as is
         elif selected_model_file.endswith(".pth"):
             model = load_pytorch_model(model_path)
-            transform = transforms.Compose([
-                transforms.Resize((256, 256)),
-                transforms.ToTensor(),
-            ])
-            torch_image = transform(image).unsqueeze(0)
-            predictions = model(torch_image).detach().numpy()
-            predicted_idx = np.argmax(predictions, axis=1)[0]
+            preprocessed_image = preprocess_image(image, model)
+            predictions = model(preprocessed_image).detach().numpy()
+            probabilities = np.exp(predictions[0]) / np.sum(np.exp(predictions[0]))  # Apply softmax for PyTorch
+            predicted_idx = np.argmax(probabilities)
+            top_predictions = probabilities.argsort()[-5:][::-1]
 
-        # Load class indices
-        class_indices = load_class_indices()
 
-        # Display predictions
-        st.subheader("Model Prediction")
-        # st.write(predictions)
-        st.write(class_indices[str(predicted_idx)])
+        # Load plant and disease class indices
+        plant_indices = load_class_indices("src/streamlit/class_plant_indices.json")
+        disease_indices = load_class_indices("src/streamlit/class_disease_indices.json")
+
+        # Display predicted class name in a table
+        st.subheader("Model Predictions")
+        predicted_plant = plant_indices[str(predicted_idx)]  # Assuming diseases are indexed per plant
+        predicted_disease = disease_indices[str(predicted_idx)]
+        st.write("**Predicted Plant Type**:", predicted_plant)
+        st.write("**Predicted Disease Type**:", predicted_disease)
+
+        # Checkbox for displaying top predictions
+        display_top_predictions = st.checkbox("Display top predictions")
+
+        # Display top 5 predictions
+        if display_top_predictions:
+            st.subheader("Top Predictions")
+            sorted_indices = top_predictions  # Already sorted
+            seen_combinations = set()  # To avoid duplicate combinations
+            top_pred_table = {
+                "Plant Type": [],
+                "Disease Type": [],
+                "Confidence": []
+            }
+            for idx in sorted_indices:
+                plant = plant_indices[str(idx)]
+                disease = disease_indices[str(idx)]
+                combination = (plant, disease)
+                if combination not in seen_combinations:  # Avoid duplicates
+                    seen_combinations.add(combination)
+                    confidence = probabilities[idx]
+                    top_pred_table["Plant Type"].append(plant)
+                    top_pred_table["Disease Type"].append(disease)
+                    top_pred_table["Confidence"].append(f"{confidence:.2%}")
+                if len(top_pred_table["Plant Type"]) == 5:  # Stop at top 5
+                    break
+
+            st.table(top_pred_table)
+
 
     # Checkbox for Grad-CAM
     display_grad_cam = st.checkbox("Display Grad-CAM")
@@ -500,8 +642,13 @@ elif page == pages[6]:
         gradcam_model_path = f"src/models/plain_architectures/plain_{selected_model_file}"
         if selected_model_file.endswith(".keras"):
             gradcam_model = load_keras_model(gradcam_model_path)
-            # gradcam_model.summary(print_fn=lambda x: st.text(x))
-            grad_cam_image = generate_grad_cam(gradcam_model, image, layer_name=None)
-            st.image(grad_cam_image, caption="Grad-CAM", width=300)
+            grad_cam_image = generate_grad_cam_keras(gradcam_model, image, layer_name=None)
+            st.image(grad_cam_image, caption=f"Grad-CAM of {selected_model_file}", width=300)
+
+
+        elif selected_model_file.endswith(".pth"):
+            gradcam_model = load_pytorch_model(model_path)
+            grad_cam_image = generate_grad_cam_pytorch(gradcam_model, image)
+            st.image(grad_cam_image, caption=f"Grad-CAM of {selected_model_file}", width=300)
 
     

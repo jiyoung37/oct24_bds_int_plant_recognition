@@ -721,7 +721,7 @@ elif page == pages[4]:
 
         ''')
 
-    with tab6: # Pre-trained models with Pytorch (Yannik)
+    with tab7: # Pre-trained models with Pytorch (Yannik)
         plantpad_url = "http://plantpad.samlab.cn"
         st.write("""We used a pre-trained model from [www.plantpad.samlab.cn](%s) which provides models for plant disease diagnosis.
                  These models have been trained on image data (421,314 images) consisting of 63 plant species and 310 kinds of plant diseases. 

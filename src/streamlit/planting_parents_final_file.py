@@ -183,96 +183,80 @@ elif page == pages[3]:
         # st.image("Model-architecture_CNN-2.png", use_container_width=True)
         # st.image("Model-architecture_CNN-3.png", use_container_width=True)
 
-    with tab2:
-        st.write("In this section, we tested different pre-trained models")
+        st.write("### Performance Metrics ")
+        st.markdown('''
+        To monitor the performance of the models, the following evaluation metrics were used:
+
+        **1. Training/Validation accuracy and loss:** measure learning progression
+                    
+        **2. Confusion matrix:** analyze classification performance across all classes
+                    
+        **3. Test dataset accuracy:** assess the models ability to generalize to unseen data.
+        ''')
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.image("src/visualization/CNN/ex_plot.png", use_container_width=True)
+        with col2:
+            st.image("src/visualization/CNN/ex_cm.png", use_container_width=True)
+        with col3:
+            st.image("src/visualization/CNN/TestDataset_33.png", use_container_width=True)
+
+    with tab2:# Dataset size
+        st.write("In this section, we tested different dataset size")
         st.image("src/visualization/CNN/1_CNN_Dataset_table.png", use_container_width=True)
         st.image("src/visualization/CNN/1_CNN_Dataset_graph+cm.png", use_container_width=True)
-
-        with st.popover("Confusion matrix"):
-            st.image("src/visualization/CNN/1_CNN_Dataset_table.png", use_container_width=True)
 
         container = st.container(border=True)
         container.write("this is summary")
 
-    with tab3:
+    with tab3: # Image size
         st.write("In this section, we tested different image sizes.")
         st.image("src/visualization/CNN/2_CNN_Image-size_table.png", use_container_width=True)
         st.image("src/visualization/CNN/2_CNN_Image-size_graph.png", use_container_width=True)
 
-        with st.popover("Confusion matrix"):
-            st.image("src/visualization/CNN/1_CNN_Dataset_table.png", use_container_width=True)
+        with st.expander("Confusion matrix"):
+            st.image("src/visualization/CNN/2_CNN_Image-size_cm.png", use_container_width=True)
+
+        container = st.container(border=True)
+        
+        st.markdown('''
+        **Summary**
+        - Increasing the image size from 224x224 to 256x256 improves the test accuracy for both learning rates.
+        - The smoother loss curve and gradual accuracy improvement for larger image sizes (256x256) at lr = 1e-3 suggest better generalization and consistent learning, making it a more reliable choice despite slower accuracy gains.
+        ''')
+    with tab4: # Learning rate
+        st.write("In this section, we tested different image sizes.")
+        st.image("src/visualization/CNN/3_CNN_Learningrate_table.png", use_container_width=True)
+        st.image("src/visualization/CNN/3_CNN_Learningrate_graph.png", use_container_width=True)
+
+        with st.expander("Confusion matrix"):
+            st.image("src/visualization/CNN/3_CNN_Learningrate_cm.png", use_container_width=True)
 
         container = st.container(border=True)
         container.write("this is summary")
-      
-# ############## Tab 1 - subtab ##################
-#         # subtab
-#         # Initialize session state for sub-tab
-#         if "sub_tab" not in st.session_state:
-#             st.session_state.sub_tab = "Dataset size"  # Default sub-tab
-        
-#         st.session_state.sub_tab = st.radio(
-#          "Test parameters",
-#          ["Dataset size", "Image size", "Learning rate", "Augmentation", "CNN layer"],
-#          index=["Dataset size", "Image size", "Learning rate", "Augmentation", "CNN layer"].index(st.session_state.sub_tab)
-#         )
+    
+    with tab5: # Augmentation
+        st.write("In this section, we evaluated the impact of augmentation on model performance.")
+        st.image("src/visualization/CNN/4_CNN_Augmentation_table.png", use_container_width=True)
+        st.image("src/visualization/CNN/4_CNN_Augmentation_graph.png", use_container_width=True)
 
-#         #sub_tab = st.radio("Test parameters",    ["Dataset size", "Image size", "Learning rate", "Augmentation","CNN layer"])
-# ############### Tab 1 - subtab 1 ##################        
-#         if st.session_state.sub_tab == "Dataset size":
-#             st.write("In this section, we tested different pre-trained models")
-#             st.image("src/visualization/CNN/1_CNN_Dataset_table.png", use_container_width=True)
-#             st.image("src/visualization/CNN/1_CNN_Dataset_graph+cm.png", use_container_width=True)
+        with st.expander("Confusion matrix"):
+            st.image("src/visualization/CNN/4_CNN_Augmentation_cm.png", use_container_width=True)
 
-#             with st.popover("Confusion matrix"):
-#                 st.image("src/visualization/CNN/1_CNN_Dataset_table.png", use_container_width=True)
+        container = st.container(border=True)
+        container.write("this is summary")
+    
+    with tab6: # CNN layer
+        st.write("In this section, we evaluated the impact of the number of convoluted layers on model performance.")
+        st.image("src/visualization/CNN/5_CNN_layer_table.png", use_container_width=True)
+        st.image("src/visualization/CNN/5_CNN_layer_graph.png", use_container_width=True)
 
-#             container = st.container(border=True)
-#             container.write("this is summary")
-# ############### Tab 1 - subtab 2 ##################   
-#         elif st.session_state.sub_tab == "Image size":
-#             st.write("In this section, we tested different image sizes.")
-#             st.image("src/visualization/CNN/2_CNN_Image-size_table", use_container_width=True)
-#             st.image("src/visualization/CNN/2_CNN_Image-size_graph", use_container_width=True)
+        with st.expander("Confusion matrix"):
+            st.image("src/visualization/CNN/5_CNN_layer_cm.png", use_container_width=True)
 
-#             with st.popover("Confusion matrix"):
-#                 st.image("src/visualization/CNN/1_CNN_Dataset_table.png", use_container_width=True)
+        container = st.container(border=True)
+        container.write("this is summary")
 
-#             container = st.container(border=True)
-#             container.write("this is summary")
-# ############### Tab 1 - subtab 3 ##################  
-#         elif st.session_state.sub_tab == "Learning rate":
-#             st.write("In this section, we experimented with different learning rates.")
-#             st.image("src/visualization/CNN/3_CNN_Learningrate_table", use_container_width=True)
-#             st.image("src/visualization/CNN/3_CNN_Learningrate_graph", use_container_width=True)
-
-#             with st.popover("Confusion matrix"):
-#                 st.image("src/visualization/CNN/1_CNN_Dataset_table.png", use_container_width=True)
-                
-#             container = st.container(border=True)
-#             container.write("this is summary")
-# ############### Tab 1 - subtab 4 ##################  
-#         elif st.session_state.sub_tab == "Augmentation":
-#             st.write("In this section, we tested various data augmentation techniques.")
-#             st.image("src/visualization/CNN/4_CNN_Augmentation_table", use_container_width=True)
-#             st.image("src/visualization/CNN/4_CNN_Augmentation_graph", use_container_width=True)
-
-#             with st.popover("Confusion matrix"):
-#                 st.image("src/visualization/CNN/1_CNN_Dataset_table.png", use_container_width=True)
-                
-#             container = st.container(border=True)
-#             container.write("this is summary")
-# ############### Tab 1 - subtab 5 ##################  
-#         elif st.session_state.sub_tab == "CNN layer":
-#             st.write("In this section, we tested various data augmentation techniques.")
-#             st.image("src/visualization/CNN/5_CNN_layer_table", use_container_width=True)
-#             st.image("src/visualization/CNN/5_CNN_layer_graph", use_container_width=True)
-
-#             with st.popover("Confusion matrix"):
-#                 st.image("src/visualization/CNN/1_CNN_Dataset_table.png", use_container_width=True)
-                
-#             container = st.container(border=True)
-#             container.write("this is summary")
 
 elif page == pages[4]:
     st.write("### Model: Transfer Learning")
@@ -483,14 +467,53 @@ elif page == pages[4]:
         st.dataframe(df2)
         st.write("\n")
         st.write("\n")
-        st.write('''
-        After learning the parameters that worked well, we decided to fine tune the modelling part until we optimized the training with VGG16.
+        
+        st.markdown('''
+        After learning the parameters that worked well, we decided to fine-tune the modelling part until we optimized the training with VGG16.  
         The changed parameters that gave the best performance were:
-         - learning rate: 0.0001
-         - image size: 224x224
-         - unfreezing of layers in 2 steps
 
+        **1. Image Size Adjustment:**  
+        The input image size was set to 224 by 224 pixels, which matches the dimensions of the pretrained ImageNet dataset. This adjustment enabled better alignment between our dataset and the pretrained weights, significantly improving the model's performance.
+
+        **2. Learning Rate Optimization**  
+        A lower learning rate was used, which proved to be an essential factor in stabilizing the training process and improving accuracy.
+
+        **3. Progressive Fine-Tuning Approach:**  
+        We adopted a progressive fine-tuning strategy to train the model effectively. This approach involved the following steps:  
+        - **Step 1:** The model was trained for 5 epochs with all layers frozen, allowing the newly added layers to adapt to the dataset without disrupting the pretrained feature extractor.  
+        - **Step 2:** All layers (or the last block) were unfrozen, and the model was trained for an additional 45 epochs using a smaller learning rate. This step fine-tuned the higher-level features to align better with our dataset's specific requirements.
         ''')
+
+        
+        ###########################################
+        st.image("src/visualization/CNN/6_VGG16_table.png", use_container_width=True)
+        st.image("src/visualization/CNN/6_VGG16_graph.png", use_container_width=True)
+
+        with st.expander("Confusion matrix"):
+            st.image("src/visualization/CNN/6_VGG16_cm.png", use_container_width=True)
+
+        container = st.container(border=True)
+        container.write("The VGG16 architecture, with all layers unfrozen, demonstrated the best performance, achieving a high level of prediction accuracy.")
+        st.write("\n")
+
+        st.markdown("**Evaluation with test datasets of different sizes**")
+
+        with st.expander("Test dataset"):
+            st.image("src/visualization/CNN/TestDataset_all.png", use_container_width=True)
+        
+        with st.expander("Test accuracy"):
+            st.image("src/visualization/CNN/Test-accuracy_F-3.png", use_container_width=True)
+        
+        st.write("\n")   
+
+        # Prediction with two test dataset
+        df = pd.read_csv("src/visualization/CNN/F_3-3_VGG16_twoStep-all-unfrozen_predictions_1.csv", header=1)
+        st.write("**Prediction with test dataset (33 images):**")
+        st.dataframe(df)
+
+        df2 = pd.read_csv("src/visualization/CNN/F_3-3_VGG16_twoStep-all-unfrozen_predictions_2.csv", header=1)
+        st.write("**Prediction with larger test dataset (283 images):**")
+        st.dataframe(df2)
 
     with tab6: # Pre-trained models with Pytorch (Yannik)
         st.write("")

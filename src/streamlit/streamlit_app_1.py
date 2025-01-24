@@ -1,237 +1,6 @@
 import streamlit as st
 import os
 import pandas as pd
-# import numpy as np
-# import matplotlib.pyplot as plt
-# import json
-# from PIL import Image
-
-# import tensorflow as tf
-# import tensorflow.keras.backend as K
-# from tensorflow.keras.models import Model
-# from tensorflow.keras.preprocessing.image import img_to_array, array_to_img
-
-# import torch
-# from torchvision import transforms
-# import torch.nn as nn
-# import torchvision.models as models
-
-# # Function to load Keras model
-# def load_keras_model(file_path):
-#     return tf.keras.models.load_model(file_path)
-
-# # Function to load PyTorch model
-# def load_pytorch_model(file_path):
-#     model = CustomResNet50(num_classes=38)
-#     model.load_state_dict(torch.load(file_path))
-#     model.eval()
-#     return model
-
-# # Load class indices from a JSON file
-# def load_class_indices(file_path):
-#     with open(file_path, "r") as f:
-#         return json.load(f)
-
-# # Function to preprocess the uploaded image
-# def preprocess_image(image, model):
-#     """
-#     Preprocess an image to match the input size of the given model.
-
-#     Parameters:
-#         image (PIL.Image): The input image.
-#         model: The trained model (Keras or PyTorch).
-
-#     Returns:
-#         np.ndarray: The preprocessed image array for Keras.
-#         torch.Tensor: The preprocessed image tensor for PyTorch.
-#     """
-#     if isinstance(model, tf.keras.Model):  # For Keras models
-#         input_shape = model.input_shape[1:3]  # Extract input size from the model
-#         resized_image = image.resize(input_shape)
-#         image_array = np.array(resized_image) / 255.0
-#         image_array = np.expand_dims(image_array, axis=0)  # Add batch dimension
-#         return image_array
-#     elif isinstance(model, torch.nn.Module):  # For PyTorch models
-#         input_size = 256  # Default input size for many PyTorch models
-#         transform = transforms.Compose([
-#             transforms.Resize((input_size, input_size)),  # Resize to input size
-#             transforms.ToTensor(),
-#         ])
-#         return transform(image).unsqueeze(0)  # Add batch dimension
-#     else:
-#         raise ValueError("Unsupported model type. Please provide a Keras or PyTorch model.")
-
-# # Custom ResNet50 class to define our TL architecture
-# class CustomResNet50(nn.Module):
-#     def __init__(self, num_classes):
-#         super(CustomResNet50, self).__init__()
-
-#         # Initialize the base model without pre-trained weights
-#         self.base_model = models.resnet50(pretrained=False)
-
-        
-#         # Modify the final fully connected layer to match the pre-trained model from the .pth file
-#         num_ftrs = self.base_model.fc.in_features
-#         self.base_model.fc = nn.Linear(num_ftrs, 120)
-      
-#         # Initialize the base model and load custom weights
-#         state_dict = torch.load('src/models/model_src/ResNet50-Plant-model-80.pth', map_location=torch.device('cpu'))
-#         self.base_model.load_state_dict(state_dict)
-      
-#         # Modify the classifier
-#         num_ftrs = self.base_model.fc.in_features
-#         self.base_model.fc = nn.Identity()  # Remove the original FC layer
-      
-#         self.classifier = nn.Sequential(
-#             nn.Linear(num_ftrs, 1024),
-#             nn.ReLU(),
-#             nn.Dropout(0.2),
-#             nn.Linear(1024, 512),
-#             nn.ReLU(),
-#             nn.Dropout(0.2),
-#             nn.Linear(512, num_classes)
-#         )
-
-#     def forward(self, x):
-#         x = self.base_model(x)
-#         x = self.classifier(x)  # Return raw logits
-#         return x
-
-
-# # Grad-CAM function for Keras
-# def generate_grad_cam_keras(model, image, layer_name=None):
-#     # Automatically detect the input size of the model
-#     input_shape = model.input_shape[1:3]  # Get height and width of the input layer
-
-#     # Resize the input image to match the model's input size
-#     resized_image = image.resize(input_shape)
-#     img_array = img_to_array(resized_image) / 255.0
-#     img_array = np.expand_dims(img_array, axis=0)
-
-#     # If layer_name is not provided, find the last convolutional layer
-#     if not layer_name:
-#         layer_name = next(
-#             (layer.name for layer in model.layers[::-1] if isinstance(layer, tf.keras.layers.Conv2D)),
-#             None
-#         )
-#         if not layer_name:
-#             raise ValueError("No convolutional layer found in the model.")
-
-#     # Create a model that maps inputs to activations of the target layer and model output
-#     grad_model = Model(inputs=model.input, outputs=[model.get_layer(layer_name).output, model.output])
-
-#     # Record operations for automatic differentiation
-#     with tf.GradientTape() as tape:
-#         conv_outputs, predictions = grad_model(img_array)
-#         predicted_class = tf.argmax(predictions[0])
-#         loss = predictions[:, predicted_class]
-
-#     # Compute the gradient of the loss with respect to the feature map
-#     grads = tape.gradient(loss, conv_outputs)
-#     pooled_grads = tf.reduce_mean(grads, axis=(0, 1, 2))
-
-#     # Compute the Grad-CAM heatmap
-#     conv_outputs = conv_outputs[0]
-#     heatmap = tf.reduce_sum(pooled_grads * conv_outputs, axis=-1)
-
-#     # Normalize the heatmap
-#     heatmap = tf.maximum(heatmap, 0)
-#     max_value = tf.reduce_max(heatmap)
-#     if max_value > 0:
-#         heatmap /= max_value
-#     heatmap = heatmap.numpy()
-
-#     # Resize the heatmap to the original image size
-#     heatmap = np.uint8(255 * heatmap)
-#     heatmap = Image.fromarray(heatmap).resize(image.size, resample=Image.BILINEAR)
-
-#     # Overlay the heatmap on the image
-#     heatmap = np.array(heatmap)
-#     colormap = plt.cm.jet(heatmap / 255.0)[:, :, :3]  # Apply colormap
-#     overlay = (colormap * 255).astype(np.uint8)
-#     overlay_image = Image.blend(image.convert("RGBA"), Image.fromarray(overlay).convert("RGBA"), alpha=0.5)
-
-#     return overlay_image
-
-# # Grad-CAM function for PyTorch
-# def generate_grad_cam_pytorch(model, image, target_layer_name=None):
-#     """
-#     Generate Grad-CAM visualization for a PyTorch model.
-  
-#     Parameters:
-#         model: PyTorch model
-#         image: PIL Image (input image)
-#         layer_name: str (name of the target convolutional layer), if not provided the function iterates through the
-#                     model's layer in reverse and finds the last Conv2d layer
-
-#     Returns:
-#         PIL Image with the Grad-CAM overlay
-#     """
-#     from torch.nn import Conv2d
-
-#     # Automatically detect the last convolutional layer if target_layer_name is not provided
-#     if target_layer_name is None:
-#         for name, module in reversed(list(model.named_modules())):
-#             if isinstance(module, Conv2d):
-#                 target_layer_name = name
-#                 break
-#         if target_layer_name is None:
-#             raise ValueError("No convolutional layer found in the model.")
-
-#     # Transform and preprocess the image
-#     transform = transforms.Compose([
-#         transforms.Resize((256, 256)),  # Resize to the input size of the model
-#         transforms.ToTensor(),
-#     ])
-#     torch_image = transform(image).unsqueeze(0)  # Add batch dimension
-
-#     # Hook to capture gradients and activations
-#     gradients = []
-#     activations = []
-
-#     def save_gradients(module, grad_input, grad_output):
-#         gradients.append(grad_output[0])
-
-#     def save_activations(module, input, output):
-#         activations.append(output)
-
-#     # Register hooks on the target layer
-#     target_layer = dict(model.named_modules())[target_layer_name]
-#     target_layer.register_forward_hook(save_activations)
-#     target_layer.register_backward_hook(save_gradients)
-
-#     # Forward pass
-#     model.eval()
-#     output = model(torch_image)
-#     class_index = output.argmax(dim=1).item()
-
-#     # Backward pass for the target class
-#     model.zero_grad()
-#     loss = output[0, class_index]
-#     loss.backward()
-
-#     # Compute Grad-CAM
-#     gradients = gradients[0].detach().cpu().numpy()
-#     activations = activations[0].detach().cpu().numpy()
-#     weights = np.mean(gradients, axis=(2, 3))  # Global average pooling of gradients
-#     grad_cam = np.zeros(activations.shape[2:], dtype=np.float32)
-#     for i, w in enumerate(weights[0]):
-#         grad_cam += w * activations[0, i, :, :]
-
-#     grad_cam = np.maximum(grad_cam, 0)
-#     grad_cam = grad_cam / grad_cam.max() if grad_cam.max() != 0 else grad_cam
-
-#     # Resize heatmap to match original image size
-#     grad_cam = np.uint8(255 * grad_cam)
-#     heatmap = Image.fromarray(grad_cam).resize(image.size, resample=Image.BILINEAR)
-
-#     # Overlay heatmap on the image
-#     heatmap = np.array(heatmap)
-#     colormap = plt.cm.jet(heatmap / 255.0)[:, :, :3]  # Apply colormap
-#     overlay = (colormap * 255).astype(np.uint8)
-#     overlay_image = Image.blend(image.convert("RGBA"), Image.fromarray(overlay).convert("RGBA"), alpha=0.5)
-
-#     return overlay_image
 
 # Load the CSV file into a DataFrame
 df = pd.read_csv("src/streamlit/plant_dataset.csv")
@@ -240,7 +9,7 @@ df = pd.read_csv("src/streamlit/plant_dataset.csv")
 
 # sidebar and page navigation
 st.sidebar.title("Table of contents")
-pages = ["Home", "Data overview", "Data exploration", "Model: CNN", "Model: Transfer Learning", "Model Interpretability", "Conclusion", "Predict your plant"]
+pages = ["Home", "Data overview", "Data exploration", "Model: CNN","Model: Transfer Learning", "Model Interpretability", "Conclusion", "Predict your plant"]
 page = st.sidebar.radio("Go to", pages)
 
 # set a dynamic title for each page
@@ -251,12 +20,11 @@ if page == pages[0]:
     with col2:
         st.image("src/visualization/Planting_parents_logo.png", use_container_width=True)
         st.header("Introduction")
-
-    st.write("Welcome to the site of the Planting Parents, where we have trained an AI model to recognise 14 different species of plants and whether they are sick or healthy by analysing 20 plant diseases."
-            " We're a group of young parents who value life and share an interest in growing plant life as well. It has been a great and rewarding challenge to present to you this app with our findings and results." 
-            " We sincerely hope you enjoy our page and that you may find it informative and recognise the plants you want to recognise. ")
-    st.write("**The planting parents,**")
-    st.write("**Lara, Ji-Young, Yannik & Niels**")
+        st.write("Welcome to the site of the Planting Parents, where we have trained an AI model to recognise 14 different species of plants and whether they are sick or healthy by analysing 20 plant diseases."
+             " We're a group of young parents who value life and share an interest in growing plant life as well. It has been a great and rewarding challenge to present to you this app with our findings and results." 
+             " We sincerely hope you enjoy our page and that you may find it informative and recognise the plants you want to recognise. ")
+        st.write("**The planting parents,**")
+        st.write("**Lara, Ji-Young, Yannik & Niels**")
 
 
 ####################
@@ -438,9 +206,13 @@ elif page == pages[3]:
         st.image("src/visualization/CNN/1_CNN_Dataset_table.png", use_container_width=True)
         st.image("src/visualization/CNN/1_CNN_Dataset_graph+cm.png", use_container_width=True)
 
-        container = st.container(border=True)
-        container.write("this is summary")
-
+        st.markdown('''
+        **Summary**
+        - 70k dataset:
+            - Improved training and validation accuracy, reducing validation loss.
+            - Stronger diagonal dominance in confusion matrix, reflecting better classification performance with fewer misclassification.
+        - **A larger dataset (70k) significantly boosts the model's performance compared to a smaller dataset (20k).**
+        ''')
     with tab3: # Image size
         st.write("In this section, we tested different image sizes.")
         st.image("src/visualization/CNN/2_CNN_Image-size_table.png", use_container_width=True)
@@ -448,24 +220,26 @@ elif page == pages[3]:
 
         with st.expander("Confusion matrix"):
             st.image("src/visualization/CNN/2_CNN_Image-size_cm.png", use_container_width=True)
-
-        container = st.container(border=True)
-        
+    
         st.markdown('''
         **Summary**
         - Increasing the image size from 224x224 to 256x256 improves the test accuracy for both learning rates.
         - The smoother loss curve and gradual accuracy improvement for larger image sizes (256x256) at lr = 1e-3 suggest better generalization and consistent learning, making it a more reliable choice despite slower accuracy gains.
         ''')
     with tab4: # Learning rate
-        st.write("In this section, we tested different image sizes.")
+        st.write("In this section, we tested different learning rates.")
         st.image("src/visualization/CNN/3_CNN_Learningrate_table.png", use_container_width=True)
         st.image("src/visualization/CNN/3_CNN_Learningrate_graph.png", use_container_width=True)
 
         with st.expander("Confusion matrix"):
             st.image("src/visualization/CNN/3_CNN_Learningrate_cm.png", use_container_width=True)
 
-        container = st.container(border=True)
-        container.write("this is summary")
+        st.markdown('''
+        **Summary**
+        - For both architectures, a learning rate of 1e-5 (Models C and E) results in the best performance.
+        - Lowering the learning rate significantly improves classification accuracy by enhancing diagonal dominance in the confusion matrix, and deeper architectures (CNN-3x) further amplify this improvement.
+        - **Lower learning rates (1e-5) combined with deeper architectures (CNN-3x) achieve better model performance.**
+        ''')
     
     with tab5: # Augmentation
         st.write("In this section, we evaluated the impact of augmentation on model performance.")
@@ -475,8 +249,13 @@ elif page == pages[3]:
         with st.expander("Confusion matrix"):
             st.image("src/visualization/CNN/4_CNN_Augmentation_cm.png", use_container_width=True)
 
-        container = st.container(border=True)
-        container.write("this is summary")
+        st.markdown('''
+        **Summary**
+        - Without augmentation (Model C), training accuracy is higher, but it seems there is overfitting, as the validation accuracy is slightly lower than the training accuracy.
+        - With augmentation (Model D), training and validation accuracy are lower, and loss is higher, but the model generalizes better, as shown by improved test accuracy (0.85 vs. 0.79).
+        - Data augmentation increases training time (335 ms/step vs. 55 ms/step)
+        - **Data augmentation enhances model generalization, by reducing overfitting but significantly increases computational costs.**
+        ''')
     
     with tab6: # CNN layer
         st.write("In this section, we evaluated the impact of the number of convoluted layers on model performance.")
@@ -486,8 +265,13 @@ elif page == pages[3]:
         with st.expander("Confusion matrix"):
             st.image("src/visualization/CNN/5_CNN_layer_cm.png", use_container_width=True)
 
-        container = st.container(border=True)
-        container.write("this is summary")
+        st.markdown('''
+        **Summary**
+        - Adding more layers (3x compared to 2x) enhances the model's ability to learn and generalize, as reflected in higher validation accuracy and lower validation loss.
+        - The trade-off is increased computational cost (longer step time) and potential overfitting, as the 3x layers model achieves perfect training accuracy.
+        - Test accuracy (C:0.79 vs E: 0.85) confirms that the 3x layers model generalizes better to unseen data
+        - **Deeper architecture (3x layers) improves generalization and test accuracy (0.85 vs. 0.79) at a modest computational cost, making it a better choice for complex classification tasks.**
+        ''')
 
 
 elif page == pages[4]:
@@ -699,7 +483,7 @@ elif page == pages[4]:
         st.dataframe(df2)
         st.write("\n")
         st.write("\n")
-    
+        
         st.markdown('''
         After learning the parameters that worked well, we decided to fine-tune the modelling part until we optimized the training with VGG16.  
         The changed parameters that gave the best performance were:
@@ -771,7 +555,7 @@ elif page == pages[4]:
         st.write("")
         st.write("""Lowering the learning rate improves the validation loss on an absolute scale but the fluctuations during training 
                  are still observable. This raises the question wether the architecture itself 
-        """)
+""")
 
 ####################
 # MODEL INTERPRET  #
@@ -902,5 +686,4 @@ elif page == pages[7]:
         elif selected_model_file.endswith(".pth"):
             gradcam_model = load_pytorch_model(model_path)
             grad_cam_image = generate_grad_cam_pytorch(gradcam_model, image)
-
             st.image(grad_cam_image, caption=f"Grad-CAM of {selected_model_file}", width=300)

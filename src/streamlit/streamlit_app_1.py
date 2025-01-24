@@ -1,237 +1,6 @@
 import streamlit as st
 import os
 import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-import json
-from PIL import Image
-
-import tensorflow as tf
-import tensorflow.keras.backend as K
-from tensorflow.keras.models import Model
-from tensorflow.keras.preprocessing.image import img_to_array, array_to_img
-
-import torch
-from torchvision import transforms
-import torch.nn as nn
-import torchvision.models as models
-
-# Function to load Keras model
-def load_keras_model(file_path):
-    return tf.keras.models.load_model(file_path)
-
-# Function to load PyTorch model
-def load_pytorch_model(file_path):
-    model = CustomResNet50(num_classes=38)
-    model.load_state_dict(torch.load(file_path))
-    model.eval()
-    return model
-
-# Load class indices from a JSON file
-def load_class_indices(file_path):
-    with open(file_path, "r") as f:
-        return json.load(f)
-
-# Function to preprocess the uploaded image
-def preprocess_image(image, model):
-    """
-    Preprocess an image to match the input size of the given model.
-
-    Parameters:
-        image (PIL.Image): The input image.
-        model: The trained model (Keras or PyTorch).
-
-    Returns:
-        np.ndarray: The preprocessed image array for Keras.
-        torch.Tensor: The preprocessed image tensor for PyTorch.
-    """
-    if isinstance(model, tf.keras.Model):  # For Keras models
-        input_shape = model.input_shape[1:3]  # Extract input size from the model
-        resized_image = image.resize(input_shape)
-        image_array = np.array(resized_image) / 255.0
-        image_array = np.expand_dims(image_array, axis=0)  # Add batch dimension
-        return image_array
-    elif isinstance(model, torch.nn.Module):  # For PyTorch models
-        input_size = 256  # Default input size for many PyTorch models
-        transform = transforms.Compose([
-            transforms.Resize((input_size, input_size)),  # Resize to input size
-            transforms.ToTensor(),
-        ])
-        return transform(image).unsqueeze(0)  # Add batch dimension
-    else:
-        raise ValueError("Unsupported model type. Please provide a Keras or PyTorch model.")
-
-# Custom ResNet50 class to define our TL architecture
-class CustomResNet50(nn.Module):
-    def __init__(self, num_classes):
-        super(CustomResNet50, self).__init__()
-
-        # Initialize the base model without pre-trained weights
-        self.base_model = models.resnet50(pretrained=False)
-
-        
-        # Modify the final fully connected layer to match the pre-trained model from the .pth file
-        num_ftrs = self.base_model.fc.in_features
-        self.base_model.fc = nn.Linear(num_ftrs, 120)
-      
-        # Initialize the base model and load custom weights
-        state_dict = torch.load('src/models/model_src/ResNet50-Plant-model-80.pth', map_location=torch.device('cpu'))
-        self.base_model.load_state_dict(state_dict)
-      
-        # Modify the classifier
-        num_ftrs = self.base_model.fc.in_features
-        self.base_model.fc = nn.Identity()  # Remove the original FC layer
-      
-        self.classifier = nn.Sequential(
-            nn.Linear(num_ftrs, 1024),
-            nn.ReLU(),
-            nn.Dropout(0.2),
-            nn.Linear(1024, 512),
-            nn.ReLU(),
-            nn.Dropout(0.2),
-            nn.Linear(512, num_classes)
-        )
-
-    def forward(self, x):
-        x = self.base_model(x)
-        x = self.classifier(x)  # Return raw logits
-        return x
-
-
-# Grad-CAM function for Keras
-def generate_grad_cam_keras(model, image, layer_name=None):
-    # Automatically detect the input size of the model
-    input_shape = model.input_shape[1:3]  # Get height and width of the input layer
-
-    # Resize the input image to match the model's input size
-    resized_image = image.resize(input_shape)
-    img_array = img_to_array(resized_image) / 255.0
-    img_array = np.expand_dims(img_array, axis=0)
-
-    # If layer_name is not provided, find the last convolutional layer
-    if not layer_name:
-        layer_name = next(
-            (layer.name for layer in model.layers[::-1] if isinstance(layer, tf.keras.layers.Conv2D)),
-            None
-        )
-        if not layer_name:
-            raise ValueError("No convolutional layer found in the model.")
-
-    # Create a model that maps inputs to activations of the target layer and model output
-    grad_model = Model(inputs=model.input, outputs=[model.get_layer(layer_name).output, model.output])
-
-    # Record operations for automatic differentiation
-    with tf.GradientTape() as tape:
-        conv_outputs, predictions = grad_model(img_array)
-        predicted_class = tf.argmax(predictions[0])
-        loss = predictions[:, predicted_class]
-
-    # Compute the gradient of the loss with respect to the feature map
-    grads = tape.gradient(loss, conv_outputs)
-    pooled_grads = tf.reduce_mean(grads, axis=(0, 1, 2))
-
-    # Compute the Grad-CAM heatmap
-    conv_outputs = conv_outputs[0]
-    heatmap = tf.reduce_sum(pooled_grads * conv_outputs, axis=-1)
-
-    # Normalize the heatmap
-    heatmap = tf.maximum(heatmap, 0)
-    max_value = tf.reduce_max(heatmap)
-    if max_value > 0:
-        heatmap /= max_value
-    heatmap = heatmap.numpy()
-
-    # Resize the heatmap to the original image size
-    heatmap = np.uint8(255 * heatmap)
-    heatmap = Image.fromarray(heatmap).resize(image.size, resample=Image.BILINEAR)
-
-    # Overlay the heatmap on the image
-    heatmap = np.array(heatmap)
-    colormap = plt.cm.jet(heatmap / 255.0)[:, :, :3]  # Apply colormap
-    overlay = (colormap * 255).astype(np.uint8)
-    overlay_image = Image.blend(image.convert("RGBA"), Image.fromarray(overlay).convert("RGBA"), alpha=0.5)
-
-    return overlay_image
-
-# Grad-CAM function for PyTorch
-def generate_grad_cam_pytorch(model, image, target_layer_name=None):
-    """
-    Generate Grad-CAM visualization for a PyTorch model.
-  
-    Parameters:
-        model: PyTorch model
-        image: PIL Image (input image)
-        layer_name: str (name of the target convolutional layer), if not provided the function iterates through the
-                    model's layer in reverse and finds the last Conv2d layer
-
-    Returns:
-        PIL Image with the Grad-CAM overlay
-    """
-    from torch.nn import Conv2d
-
-    # Automatically detect the last convolutional layer if target_layer_name is not provided
-    if target_layer_name is None:
-        for name, module in reversed(list(model.named_modules())):
-            if isinstance(module, Conv2d):
-                target_layer_name = name
-                break
-        if target_layer_name is None:
-            raise ValueError("No convolutional layer found in the model.")
-
-    # Transform and preprocess the image
-    transform = transforms.Compose([
-        transforms.Resize((256, 256)),  # Resize to the input size of the model
-        transforms.ToTensor(),
-    ])
-    torch_image = transform(image).unsqueeze(0)  # Add batch dimension
-
-    # Hook to capture gradients and activations
-    gradients = []
-    activations = []
-
-    def save_gradients(module, grad_input, grad_output):
-        gradients.append(grad_output[0])
-
-    def save_activations(module, input, output):
-        activations.append(output)
-
-    # Register hooks on the target layer
-    target_layer = dict(model.named_modules())[target_layer_name]
-    target_layer.register_forward_hook(save_activations)
-    target_layer.register_backward_hook(save_gradients)
-
-    # Forward pass
-    model.eval()
-    output = model(torch_image)
-    class_index = output.argmax(dim=1).item()
-
-    # Backward pass for the target class
-    model.zero_grad()
-    loss = output[0, class_index]
-    loss.backward()
-
-    # Compute Grad-CAM
-    gradients = gradients[0].detach().cpu().numpy()
-    activations = activations[0].detach().cpu().numpy()
-    weights = np.mean(gradients, axis=(2, 3))  # Global average pooling of gradients
-    grad_cam = np.zeros(activations.shape[2:], dtype=np.float32)
-    for i, w in enumerate(weights[0]):
-        grad_cam += w * activations[0, i, :, :]
-
-    grad_cam = np.maximum(grad_cam, 0)
-    grad_cam = grad_cam / grad_cam.max() if grad_cam.max() != 0 else grad_cam
-
-    # Resize heatmap to match original image size
-    grad_cam = np.uint8(255 * grad_cam)
-    heatmap = Image.fromarray(grad_cam).resize(image.size, resample=Image.BILINEAR)
-
-    # Overlay heatmap on the image
-    heatmap = np.array(heatmap)
-    colormap = plt.cm.jet(heatmap / 255.0)[:, :, :3]  # Apply colormap
-    overlay = (colormap * 255).astype(np.uint8)
-    overlay_image = Image.blend(image.convert("RGBA"), Image.fromarray(overlay).convert("RGBA"), alpha=0.5)
-
-    return overlay_image
 
 # Load the CSV file into a DataFrame
 df = pd.read_csv("src/streamlit/plant_dataset.csv")
@@ -251,12 +20,11 @@ if page == pages[0]:
     with col2:
         st.image("src/visualization/Planting_parents_logo.png", use_container_width=True)
         st.header("Introduction")
-
-    st.write("Welcome to the site of the Planting Parents, where we have trained an AI model to recognise 14 different species of plants and whether they are sick or healthy by analysing 20 plant diseases."
-            " We're a group of young parents who value life and share an interest in growing plant life as well. It has been a great and rewarding challenge to present to you this app with our findings and results." 
-            " We sincerely hope you enjoy our page and that you may find it informative and recognise the plants you want to recognise. ")
-    st.write("**The planting parents,**")
-    st.write("**Lara, Ji-Young, Yannik & Niels**")
+        st.write("Welcome to the site of the Planting Parents, where we have trained an AI model to recognise 14 different species of plants and whether they are sick or healthy by analysing 20 plant diseases."
+             " We're a group of young parents who value life and share an interest in growing plant life as well. It has been a great and rewarding challenge to present to you this app with our findings and results." 
+             " We sincerely hope you enjoy our page and that you may find it informative and recognise the plants you want to recognise. ")
+        st.write("**The planting parents,**")
+        st.write("**Lara, Ji-Young, Yannik & Niels**")
 
 
 ####################
@@ -457,7 +225,7 @@ elif page == pages[3]:
         - The smoother loss curve and gradual accuracy improvement for larger image sizes (256x256) at lr = 1e-3 suggest better generalization and consistent learning, making it a more reliable choice despite slower accuracy gains.
         ''')
     with tab4: # Learning rate
-        st.write("In this section, we tested different image sizes.")
+        st.write("In this section, we tested different learning rates.")
         st.image("src/visualization/CNN/3_CNN_Learningrate_table.png", use_container_width=True)
         st.image("src/visualization/CNN/3_CNN_Learningrate_graph.png", use_container_width=True)
 
@@ -662,17 +430,27 @@ elif page == pages[4]:
         st.markdown("""<div style='text-align: center;'>Metrics history</div>""", unsafe_allow_html=True)
         st.image("src/visualization/Transfer_Learning_param_tests/TL_VGG16_unfrozen_lr10e-4.png")
         st.write("\n")
+
         st.markdown("""<div style='text-align: center;'>Confusion matrix</div>""", unsafe_allow_html=True)
         st.image("src/visualization/Transfer_Learning_param_tests/TL_VGG16_unfrozen_lr10e-4_CM.png")
         st.write("\n")
 
-        st.markdown("**2) Change of input image size to 224x224**")
+    with tab5: # Modification of the image size
+        st.write("In this section we changed the input image size from 256x256 to 224x224 to see how this could change the training for the model with VGG16, while keeping the learning rate of 0.001, which gave the bad results.")
+        st.markdown("<h2 style='text-align: center; color: green;'>VGG16 </h2>", unsafe_allow_html=True)
         st.markdown("""<div style='text-align: center;'>Metrics history</div>""", unsafe_allow_html=True)
         st.image("src/visualization/Transfer_Learning_param_tests/TL_VGG16_unfrozen_224.png")
+        st.write("\n")        
+        
+        st.markdown("""<div style='text-align: center;'>Confusion matrix</div>""", unsafe_allow_html=True)
+        st.image("src/visualization/Transfer_Learning_param_tests/TL_VGG16_unfrozen_224_CM.png")
         st.write("\n")
 
-        # Summary of metrics
-        st.markdown("**Metrics summary**")
+    
+    with tab6: # Fine tuning with VGG16 
+        st.write("In this section we went deeper into the optimization of the model with VGG16. From the previous trainings we observed dramatic improvements with some parameter changes, as we see in the following table:")
+        # Summary of previous metrics
+        st.markdown("**Previous metrics summary**")
         data2 = {
         'Model': [
             'VGG16 unfrozen', 'VGG16 partly frozen', 'VGG16 unfrozen lr 10E-4', 'VGG16 unfrozen size 224x224'
@@ -740,6 +518,16 @@ elif page == pages[4]:
     with tab6: # Pre-trained models with Pytorch (Yannik)
         st.write("")
 
+
+    css = '''
+    <style>
+    .stTabs [data-baseweb="tab-list"] button [data-testid="stMarkdownContainer"] p {
+    font-size:0.82rem;
+    }
+    </style>
+    '''
+
+    st.markdown(css, unsafe_allow_html=True)
 ####################
 # MODEL INTERPRET  #
 ####################
@@ -771,102 +559,8 @@ elif page == pages[6]:
 
 
 elif page == pages[7]:
-    plantpad_url = "http://plantpad.samlab.cn"
-    st.write("### Predict your plant")
-    st.write("")
-    st.write("You can select between three final models:")
-    st.markdown("- ResNet50 (PyTorch) based on the pre-trained model from [www.plantpad.samlab.cn](%s)" % plantpad_url)
-    st.markdown("- VGG16 (Keras): all layers unfrozen, fine-tuned with a learning rate of 1e-5 and img size of 224x224")
-    st.markdown("- MobileNetV2 (Keras): all layers unfrozen, a learning rate of 1e-3 and img size of 256x256")
-
-
-    # Dropdown menu for selecting a trained model
-    model_files = [f for f in os.listdir("src/models/") if f.endswith(".keras") or f.endswith(".pth")]
-    selected_model_file = st.selectbox("Select a trained model:", model_files)
-
-    # Drag-and-drop file uploader for image
-    uploaded_file = st.file_uploader("Upload an image:", type=["jpg", "jpeg", "png"])
-
-    if uploaded_file is not None:
-        # Display uploaded image
-        image = Image.open(uploaded_file)
-        st.image(image, caption="Uploaded Image",  width=300)
-
-        # Load the selected model
-        model_path = os.path.join("src/models", selected_model_file)
-
-        # Calculate predictions and handle confidence probabilities
-        if selected_model_file.endswith(".keras"):
-            model = load_keras_model(model_path)
-            preprocessed_image = preprocess_image(image, model)
-            predictions = model.predict(preprocessed_image)  # No softmax needed
-            predicted_idx = np.argmax(predictions[0])
-            top_predictions = predictions[0].argsort()[-5:][::-1]
-            probabilities = predictions[0]  # Use raw probabilities as is
-        elif selected_model_file.endswith(".pth"):
-            model = load_pytorch_model(model_path)
-            preprocessed_image = preprocess_image(image, model)
-            predictions = model(preprocessed_image).detach().numpy()
-            probabilities = np.exp(predictions[0]) / np.sum(np.exp(predictions[0]))  # Apply softmax for PyTorch
-            predicted_idx = np.argmax(probabilities)
-            top_predictions = probabilities.argsort()[-5:][::-1]
-
-
-        # Load plant and disease class indices
-        plant_indices = load_class_indices("src/streamlit/class_plant_indices.json")
-        disease_indices = load_class_indices("src/streamlit/class_disease_indices.json")
-
-        # Display predicted class name in a table
-        st.subheader("Model Predictions")
-        predicted_plant = plant_indices[str(predicted_idx)]  # Assuming diseases are indexed per plant
-        predicted_disease = disease_indices[str(predicted_idx)]
-        st.write("**Predicted Plant Type**:", predicted_plant)
-        st.write("**Predicted Disease Type**:", predicted_disease)
-
-        # Checkbox for displaying top predictions
-        display_top_predictions = st.checkbox("Display top predictions")
-
-        # Display top 5 predictions
-        if display_top_predictions:
-            st.subheader("Top Predictions")
-            sorted_indices = top_predictions  # Already sorted
-            seen_combinations = set()  # To avoid duplicate combinations
-            top_pred_table = {
-                "Plant Type": [],
-                "Disease Type": [],
-                "Confidence": []
-            }
-            for idx in sorted_indices:
-                plant = plant_indices[str(idx)]
-                disease = disease_indices[str(idx)]
-                combination = (plant, disease)
-                if combination not in seen_combinations:  # Avoid duplicates
-                    seen_combinations.add(combination)
-                    confidence = probabilities[idx]
-                    top_pred_table["Plant Type"].append(plant)
-                    top_pred_table["Disease Type"].append(disease)
-                    top_pred_table["Confidence"].append(f"{confidence:.2%}")
-                if len(top_pred_table["Plant Type"]) == 5:  # Stop at top 5
-                    break
-
-            st.table(top_pred_table)
-
-
-    # Checkbox for Grad-CAM
-    display_grad_cam = st.checkbox("Display Grad-CAM")
-
-    # Generate and display Grad-CAM if selected
-    if display_grad_cam:
-        st.subheader("Grad-CAM Visualization")
-
-        gradcam_model_path = f"src/models/plain_architectures/plain_{selected_model_file}"
-        if selected_model_file.endswith(".keras"):
-            gradcam_model = load_keras_model(gradcam_model_path)
-            grad_cam_image = generate_grad_cam_keras(gradcam_model, image, layer_name=None)
-            st.image(grad_cam_image, caption=f"Grad-CAM of {selected_model_file}", width=300)
-
-
-        elif selected_model_file.endswith(".pth"):
-            gradcam_model = load_pytorch_model(model_path)
-            grad_cam_image = generate_grad_cam_pytorch(gradcam_model, image)
-            st.image(grad_cam_image, caption=f"Grad-CAM of {selected_model_file}", width=300)
+    st.write("### Upload an image to predict the plant type")
+    st.write("This subpage should contain the actual app. Here, the user should chose")
+    st.checkbox("between different models")
+    st.checkbox("wether or not a Grad-CAM of the image should be shown")
+    

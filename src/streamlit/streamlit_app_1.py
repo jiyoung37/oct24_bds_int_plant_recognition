@@ -206,9 +206,13 @@ elif page == pages[3]:
         st.image("src/visualization/CNN/1_CNN_Dataset_table.png", use_container_width=True)
         st.image("src/visualization/CNN/1_CNN_Dataset_graph+cm.png", use_container_width=True)
 
-        container = st.container(border=True)
-        container.write("this is summary")
-
+        st.markdown('''
+        **Summary**
+        - 70k dataset:
+            - Improved training and validation accuracy, reducing validation loss.
+            - Stronger diagonal dominance in confusion matrix, reflecting better classification performance with fewer misclassification.
+        - **A larger dataset (70k) significantly boosts the model's performance compared to a smaller dataset (20k).**
+        ''')
     with tab3: # Image size
         st.write("In this section, we tested different image sizes.")
         st.image("src/visualization/CNN/2_CNN_Image-size_table.png", use_container_width=True)
@@ -216,9 +220,7 @@ elif page == pages[3]:
 
         with st.expander("Confusion matrix"):
             st.image("src/visualization/CNN/2_CNN_Image-size_cm.png", use_container_width=True)
-
-        container = st.container(border=True)
-        
+    
         st.markdown('''
         **Summary**
         - Increasing the image size from 224x224 to 256x256 improves the test accuracy for both learning rates.
@@ -232,8 +234,12 @@ elif page == pages[3]:
         with st.expander("Confusion matrix"):
             st.image("src/visualization/CNN/3_CNN_Learningrate_cm.png", use_container_width=True)
 
-        container = st.container(border=True)
-        container.write("this is summary")
+        st.markdown('''
+        **Summary**
+        - For both architectures, a learning rate of 1e-5 (Models C and E) results in the best performance.
+        - Lowering the learning rate significantly improves classification accuracy by enhancing diagonal dominance in the confusion matrix, and deeper architectures (CNN-3x) further amplify this improvement.
+        - **Lower learning rates (1e-5) combined with deeper architectures (CNN-3x) achieve better model performance.**
+        ''')
     
     with tab5: # Augmentation
         st.write("In this section, we evaluated the impact of augmentation on model performance.")
@@ -243,8 +249,13 @@ elif page == pages[3]:
         with st.expander("Confusion matrix"):
             st.image("src/visualization/CNN/4_CNN_Augmentation_cm.png", use_container_width=True)
 
-        container = st.container(border=True)
-        container.write("this is summary")
+        st.markdown('''
+        **Summary**
+        - Without augmentation (Model C), training accuracy is higher, but it seems there is overfitting, as the validation accuracy is slightly lower than the training accuracy.
+        - With augmentation (Model D), training and validation accuracy are lower, and loss is higher, but the model generalizes better, as shown by improved test accuracy (0.85 vs. 0.79).
+        - Data augmentation increases training time (335 ms/step vs. 55 ms/step)
+        - **Data augmentation enhances model generalization, by reducing overfitting but significantly increases computational costs.**
+        ''')
     
     with tab6: # CNN layer
         st.write("In this section, we evaluated the impact of the number of convoluted layers on model performance.")
@@ -254,8 +265,13 @@ elif page == pages[3]:
         with st.expander("Confusion matrix"):
             st.image("src/visualization/CNN/5_CNN_layer_cm.png", use_container_width=True)
 
-        container = st.container(border=True)
-        container.write("this is summary")
+        st.markdown('''
+        **Summary**
+        - Adding more layers (3x compared to 2x) enhances the model's ability to learn and generalize, as reflected in higher validation accuracy and lower validation loss.
+        - The trade-off is increased computational cost (longer step time) and potential overfitting, as the 3x layers model achieves perfect training accuracy.
+        - Test accuracy (C:0.79 vs E: 0.85) confirms that the 3x layers model generalizes better to unseen data
+        - **Deeper architecture (3x layers) improves generalization and test accuracy (0.85 vs. 0.79) at a modest computational cost, making it a better choice for complex classification tasks.**
+        ''')
 
 
 elif page == pages[4]:

@@ -665,21 +665,13 @@ elif page == pages[4]:
         st.image("src/visualization/Transfer_Learning_param_tests/TL_VGG16_unfrozen_lr10e-4_CM.png")
         st.write("\n")
 
-    with tab5: # Modification of the image size
-        st.write("In this section we changed the input image size from 256x256 to 224x224 to see how this could change the training for the model with VGG16, while keeping the learning rate of 0.001, which gave the bad results.")
-        st.markdown("<h2 style='text-align: center; color: green;'>VGG16 </h2>", unsafe_allow_html=True)
+        st.markdown("**2) Change of input image size to 224x224**")
         st.markdown("""<div style='text-align: center;'>Metrics history</div>""", unsafe_allow_html=True)
         st.image("src/visualization/Transfer_Learning_param_tests/TL_VGG16_unfrozen_224.png")
-        st.write("\n")        
-        
-        st.markdown("""<div style='text-align: center;'>Confusion matrix</div>""", unsafe_allow_html=True)
-        st.image("src/visualization/Transfer_Learning_param_tests/TL_VGG16_unfrozen_224_CM.png")
         st.write("\n")
-    
-    with tab6: # Fine tuning with VGG16 
-        st.write("In this section we went deeper into the optimization of the model with VGG16. From the previous trainings we observed dramatic improvements with some parameter changes, as we see in the following table:")
-        # Summary of previous metrics
-        st.markdown("**Previous metrics summary**")
+
+        # Summary of metrics
+        st.markdown("**Metrics summary**")
         data2 = {
         'Model': [
             'VGG16 unfrozen', 'VGG16 partly frozen', 'VGG16 unfrozen lr 10E-4', 'VGG16 unfrozen size 224x224'
@@ -744,42 +736,9 @@ elif page == pages[4]:
         st.write("**Prediction with larger test dataset (283 images):**")
         st.dataframe(df2)
 
-    with tab7: # Pre-trained models with Pytorch (Yannik)
-        plantpad_url = "http://plantpad.samlab.cn"
-        st.write("""We used a pre-trained model from [www.plantpad.samlab.cn](%s) which provides models for plant disease diagnosis.
-                 These models have been trained on image data (421,314 images) consisting of 63 plant species and 310 kinds of plant diseases. 
-                 We employed a ResNet50 model for transfer learning by using it as the base model for feature extraction on which we added a 3-layer classifier CNN.""" % plantpad_url)
+    with tab6: # Pre-trained models with Pytorch (Yannik)
         st.write("")
-        st.write("")
-        st.write("We again used the same inital training parameters as for the TL models in Keras and kept the base model layers frozen:")
-        st.markdown(parameters.style.hide(axis="index").to_html(), unsafe_allow_html=True)
-        st.write("")
-        st.write("")
-        st.write("")
-        st.image("src/visualization/Transfer_Learning_PyTorch_ResNet50/ResNet50_all-frozen_lr-1e-3.png")
-        st.write("")
-        st.write("")
-        st.write("""Although the training and validation accuracies are above 0.98, the validation loss shows high fluctuations instead
-                 of decreasing. This suggests that the model is not learning properly. As a next step, we decreased the learning rate to 1e-4.""")
-        st.write("")
-        st.write("")
-        st.image("src/visualization/Transfer_Learning_PyTorch_ResNet50/ResNet50_all-frozen_lr-1e-4.png")
-        st.write("")
-        st.write("")
-        st.write("""Lowering the learning rate improves the validation loss on an absolute scale but the fluctuations during training 
-                 are still observable. This raises the question wether the architecture itself 
-""")
 
-
-    css = '''
-    <style>
-    .stTabs [data-baseweb="tab-list"] button [data-testid="stMarkdownContainer"] p {
-    font-size:0.82rem;
-    }
-    </style>
-    '''
-
-    st.markdown(css, unsafe_allow_html=True)
 ####################
 # MODEL INTERPRET  #
 ####################

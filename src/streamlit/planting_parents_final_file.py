@@ -52,7 +52,7 @@ def preprocess_image(image, model):
         image_array = np.expand_dims(image_array, axis=0)  # Add batch dimension
         return image_array
     elif isinstance(model, torch.nn.Module):  # For PyTorch models
-        input_size = 224  # Default input size for many PyTorch models
+        input_size = 256  # Default input size for many PyTorch models
         transform = transforms.Compose([
             transforms.Resize((input_size, input_size)),  # Resize to input size
             transforms.ToTensor(),
@@ -787,7 +787,7 @@ elif page == pages[6]:
 ####################
 
 
-elif page == pages[6]:
+elif page == pages[7]:
     plantpad_url = "http://plantpad.samlab.cn"
     st.write("### Predict your plant")
     st.write("")
@@ -887,5 +887,3 @@ elif page == pages[6]:
             gradcam_model = load_pytorch_model(model_path)
             grad_cam_image = generate_grad_cam_pytorch(gradcam_model, image)
             st.image(grad_cam_image, caption=f"Grad-CAM of {selected_model_file}", width=300)
-
-    

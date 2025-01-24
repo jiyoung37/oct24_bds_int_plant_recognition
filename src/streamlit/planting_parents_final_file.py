@@ -240,7 +240,7 @@ df = pd.read_csv("src/streamlit/plant_dataset.csv")
 
 # sidebar and page navigation
 st.sidebar.title("Table of contents")
-pages = ["Home", "Data overview", "Data exploration", "Model: CNN","Model: Transfer Learning", "Model Interpretability", "Conclusion", "Predict your plant"]
+pages = ["Home", "Data overview", "Data exploration", "Model: CNN", "Model: Transfer Learning", "Model Interpretability", "Conclusion", "Predict your plant"]
 page = st.sidebar.radio("Go to", pages)
 
 # set a dynamic title for each page
@@ -689,7 +689,11 @@ elif page == pages[4]:
         st.dataframe(df2)
         st.write("\n")
         st.write("\n")
-        
+    
+    with tab5:
+        st.write("Paste in what is meant to be here.")
+    
+    with tab6:    
         st.markdown('''
         After learning the parameters that worked well, we decided to fine-tune the modelling part until we optimized the training with VGG16.  
         The changed parameters that gave the best performance were:
@@ -737,8 +741,31 @@ elif page == pages[4]:
         st.write("**Prediction with larger test dataset (283 images):**")
         st.dataframe(df2)
 
-    with tab6: # Pre-trained models with Pytorch (Yannik)
+    with tab7: # Pre-trained models with Pytorch (Yannik)
+        plantpad_url = "http://plantpad.samlab.cn"
+        st.write("""We used a pre-trained model from [www.plantpad.samlab.cn](%s) which provides models for plant disease diagnosis.
+                 These models have been trained on image data (421,314 images) consisting of 63 plant species and 310 kinds of plant diseases. 
+                 We employed a ResNet50 model for transfer learning by using it as the base model for feature extraction on which we added a 3-layer classifier CNN.""" % plantpad_url)
         st.write("")
+        st.write("")
+        st.write("We again used the same inital training parameters as for the TL models in Keras and kept the base model layers frozen:")
+        st.markdown(parameters.style.hide(axis="index").to_html(), unsafe_allow_html=True)
+        st.write("")
+        st.write("")
+        st.write("")
+        st.image("src/visualization/Transfer_Learning_PyTorch_ResNet50/ResNet50_all-frozen_lr-1e-3.png")
+        st.write("")
+        st.write("")
+        st.write("""Although the training and validation accuracies are above 0.98, the validation loss shows high fluctuations instead
+                 of decreasing. This suggests that the model is not learning properly. As a next step, we decreased the learning rate to 1e-4.""")
+        st.write("")
+        st.write("")
+        st.image("src/visualization/Transfer_Learning_PyTorch_ResNet50/ResNet50_all-frozen_lr-1e-4.png")
+        st.write("")
+        st.write("")
+        st.write("""Lowering the learning rate improves the validation loss on an absolute scale but the fluctuations during training 
+                 are still observable. This raises the question wether the architecture itself 
+""")
 
 ####################
 # MODEL INTERPRET  #

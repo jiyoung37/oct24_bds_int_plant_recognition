@@ -906,4 +906,10 @@ elif page == pages[7]:
         elif selected_model_file.endswith(".pth"):
             gradcam_model = load_pytorch_model(model_path)
             grad_cam_image = generate_grad_cam_pytorch(gradcam_model, image)
+<<<<<<< HEAD
             st.image(grad_cam_image, caption=f"Grad-CAM of {selected_model_file}", width=300)
+=======
+            st.image(grad_cam_image, caption=f"Grad-CAM of {selected_model_file}", width=300)
+
+    
+>>>>>>> 15bf113d211cf2fe8ccf8b75e4535341d0627dfc

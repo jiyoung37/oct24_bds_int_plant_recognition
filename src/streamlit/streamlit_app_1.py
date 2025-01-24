@@ -515,19 +515,32 @@ elif page == pages[4]:
         st.write("**Prediction with larger test dataset (283 images):**")
         st.dataframe(df2)
 
-    with tab6: # Pre-trained models with Pytorch (Yannik)
+    with tab7: # Pre-trained models with Pytorch (Yannik)
+        plantpad_url = "http://plantpad.samlab.cn"
+        st.write("""We used a pre-trained model from [www.plantpad.samlab.cn](%s) which provides models for plant disease diagnosis.
+                 These models have been trained on image data (421,314 images) consisting of 63 plant species and 310 kinds of plant diseases. 
+                 We employed a ResNet50 model for transfer learning by using it as the base model for feature extraction on which we added a 3-layer classifier CNN.""" % plantpad_url)
         st.write("")
+        st.write("")
+        st.write("We again used the same inital training parameters as for the TL models in Keras and kept the base model layers frozen:")
+        st.markdown(parameters.style.hide(axis="index").to_html(), unsafe_allow_html=True)
+        st.write("")
+        st.write("")
+        st.write("")
+        st.image("src/visualization/Transfer_Learning_PyTorch_ResNet50/ResNet50_all-frozen_lr-1e-3.png")
+        st.write("")
+        st.write("")
+        st.write("""Although the training and validation accuracies are above 0.98, the validation loss shows high fluctuations instead
+                 of decreasing. This suggests that the model is not learning properly. As a next step, we decreased the learning rate to 1e-4.""")
+        st.write("")
+        st.write("")
+        st.image("src/visualization/Transfer_Learning_PyTorch_ResNet50/ResNet50_all-frozen_lr-1e-4.png")
+        st.write("")
+        st.write("")
+        st.write("""Lowering the learning rate improves the validation loss on an absolute scale but the fluctuations during training 
+                 are still observable. This raises the question wether the architecture itself 
+""")
 
-
-    css = '''
-    <style>
-    .stTabs [data-baseweb="tab-list"] button [data-testid="stMarkdownContainer"] p {
-    font-size:0.82rem;
-    }
-    </style>
-    '''
-
-    st.markdown(css, unsafe_allow_html=True)
 ####################
 # MODEL INTERPRET  #
 ####################
@@ -559,8 +572,102 @@ elif page == pages[6]:
 
 
 elif page == pages[7]:
-    st.write("### Upload an image to predict the plant type")
-    st.write("This subpage should contain the actual app. Here, the user should chose")
-    st.checkbox("between different models")
-    st.checkbox("wether or not a Grad-CAM of the image should be shown")
-    
+    plantpad_url = "http://plantpad.samlab.cn"
+    st.write("### Predict your plant")
+    st.write("")
+    st.write("You can select between three final models:")
+    st.markdown("- ResNet50 (PyTorch) based on the pre-trained model from [www.plantpad.samlab.cn](%s)" % plantpad_url)
+    st.markdown("- VGG16 (Keras): all layers unfrozen, fine-tuned with a learning rate of 1e-5 and img size of 224x224")
+    st.markdown("- MobileNetV2 (Keras): all layers unfrozen, a learning rate of 1e-3 and img size of 256x256")
+
+
+    # Dropdown menu for selecting a trained model
+    model_files = [f for f in os.listdir("src/models/") if f.endswith(".keras") or f.endswith(".pth")]
+    selected_model_file = st.selectbox("Select a trained model:", model_files)
+
+    # Drag-and-drop file uploader for image
+    uploaded_file = st.file_uploader("Upload an image:", type=["jpg", "jpeg", "png"])
+
+    if uploaded_file is not None:
+        # Display uploaded image
+        image = Image.open(uploaded_file)
+        st.image(image, caption="Uploaded Image",  width=300)
+
+        # Load the selected model
+        model_path = os.path.join("src/models", selected_model_file)
+
+        # Calculate predictions and handle confidence probabilities
+        if selected_model_file.endswith(".keras"):
+            model = load_keras_model(model_path)
+            preprocessed_image = preprocess_image(image, model)
+            predictions = model.predict(preprocessed_image)  # No softmax needed
+            predicted_idx = np.argmax(predictions[0])
+            top_predictions = predictions[0].argsort()[-5:][::-1]
+            probabilities = predictions[0]  # Use raw probabilities as is
+        elif selected_model_file.endswith(".pth"):
+            model = load_pytorch_model(model_path)
+            preprocessed_image = preprocess_image(image, model)
+            predictions = model(preprocessed_image).detach().numpy()
+            probabilities = np.exp(predictions[0]) / np.sum(np.exp(predictions[0]))  # Apply softmax for PyTorch
+            predicted_idx = np.argmax(probabilities)
+            top_predictions = probabilities.argsort()[-5:][::-1]
+
+
+        # Load plant and disease class indices
+        plant_indices = load_class_indices("src/streamlit/class_plant_indices.json")
+        disease_indices = load_class_indices("src/streamlit/class_disease_indices.json")
+
+        # Display predicted class name in a table
+        st.subheader("Model Predictions")
+        predicted_plant = plant_indices[str(predicted_idx)]  # Assuming diseases are indexed per plant
+        predicted_disease = disease_indices[str(predicted_idx)]
+        st.write("**Predicted Plant Type**:", predicted_plant)
+        st.write("**Predicted Disease Type**:", predicted_disease)
+
+        # Checkbox for displaying top predictions
+        display_top_predictions = st.checkbox("Display top predictions")
+
+        # Display top 5 predictions
+        if display_top_predictions:
+            st.subheader("Top Predictions")
+            sorted_indices = top_predictions  # Already sorted
+            seen_combinations = set()  # To avoid duplicate combinations
+            top_pred_table = {
+                "Plant Type": [],
+                "Disease Type": [],
+                "Confidence": []
+            }
+            for idx in sorted_indices:
+                plant = plant_indices[str(idx)]
+                disease = disease_indices[str(idx)]
+                combination = (plant, disease)
+                if combination not in seen_combinations:  # Avoid duplicates
+                    seen_combinations.add(combination)
+                    confidence = probabilities[idx]
+                    top_pred_table["Plant Type"].append(plant)
+                    top_pred_table["Disease Type"].append(disease)
+                    top_pred_table["Confidence"].append(f"{confidence:.2%}")
+                if len(top_pred_table["Plant Type"]) == 5:  # Stop at top 5
+                    break
+
+            st.table(top_pred_table)
+
+
+    # Checkbox for Grad-CAM
+    display_grad_cam = st.checkbox("Display Grad-CAM")
+
+    # Generate and display Grad-CAM if selected
+    if display_grad_cam:
+        st.subheader("Grad-CAM Visualization")
+
+        gradcam_model_path = f"src/models/plain_architectures/plain_{selected_model_file}"
+        if selected_model_file.endswith(".keras"):
+            gradcam_model = load_keras_model(gradcam_model_path)
+            grad_cam_image = generate_grad_cam_keras(gradcam_model, image, layer_name=None)
+            st.image(grad_cam_image, caption=f"Grad-CAM of {selected_model_file}", width=300)
+
+
+        elif selected_model_file.endswith(".pth"):
+            gradcam_model = load_pytorch_model(model_path)
+            grad_cam_image = generate_grad_cam_pytorch(gradcam_model, image)
+            st.image(grad_cam_image, caption=f"Grad-CAM of {selected_model_file}", width=300)

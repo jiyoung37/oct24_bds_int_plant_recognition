@@ -662,17 +662,27 @@ elif page == pages[4]:
         st.markdown("""<div style='text-align: center;'>Metrics history</div>""", unsafe_allow_html=True)
         st.image("src/visualization/Transfer_Learning_param_tests/TL_VGG16_unfrozen_lr10e-4.png")
         st.write("\n")
+
         st.markdown("""<div style='text-align: center;'>Confusion matrix</div>""", unsafe_allow_html=True)
         st.image("src/visualization/Transfer_Learning_param_tests/TL_VGG16_unfrozen_lr10e-4_CM.png")
         st.write("\n")
 
-        st.markdown("**2) Change of input image size to 224x224**")
+    with tab5: # Modification of the image size
+        st.write("In this section we changed the input image size from 256x256 to 224x224 to see how this could change the training for the model with VGG16, while keeping the learning rate of 0.001, which gave the bad results.")
+        st.markdown("<h2 style='text-align: center; color: green;'>VGG16 </h2>", unsafe_allow_html=True)
         st.markdown("""<div style='text-align: center;'>Metrics history</div>""", unsafe_allow_html=True)
         st.image("src/visualization/Transfer_Learning_param_tests/TL_VGG16_unfrozen_224.png")
+        st.write("\n")        
+        
+        st.markdown("""<div style='text-align: center;'>Confusion matrix</div>""", unsafe_allow_html=True)
+        st.image("src/visualization/Transfer_Learning_param_tests/TL_VGG16_unfrozen_224_CM.png")
         st.write("\n")
 
-        # Summary of metrics
-        st.markdown("**Metrics summary**")
+    
+    with tab6: # Fine tuning with VGG16 
+        st.write("In this section we went deeper into the optimization of the model with VGG16. From the previous trainings we observed dramatic improvements with some parameter changes, as we see in the following table:")
+        # Summary of previous metrics
+        st.markdown("**Previous metrics summary**")
         data2 = {
         'Model': [
             'VGG16 unfrozen', 'VGG16 partly frozen', 'VGG16 unfrozen lr 10E-4', 'VGG16 unfrozen size 224x224'

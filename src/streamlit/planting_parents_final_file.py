@@ -661,17 +661,27 @@ elif page == pages[4]:
         st.markdown("""<div style='text-align: center;'>Metrics history</div>""", unsafe_allow_html=True)
         st.image("src/visualization/Transfer_Learning_param_tests/TL_VGG16_unfrozen_lr10e-4.png")
         st.write("\n")
+
         st.markdown("""<div style='text-align: center;'>Confusion matrix</div>""", unsafe_allow_html=True)
         st.image("src/visualization/Transfer_Learning_param_tests/TL_VGG16_unfrozen_lr10e-4_CM.png")
         st.write("\n")
 
-        st.markdown("**2) Change of input image size to 224x224**")
+    with tab5: # Modification of the image size
+        st.write("In this section we changed the input image size from 256x256 to 224x224 to see how this could change the training for the model with VGG16, while keeping the learning rate of 0.001, which gave the bad results.")
+        st.markdown("<h2 style='text-align: center; color: green;'>VGG16 </h2>", unsafe_allow_html=True)
         st.markdown("""<div style='text-align: center;'>Metrics history</div>""", unsafe_allow_html=True)
         st.image("src/visualization/Transfer_Learning_param_tests/TL_VGG16_unfrozen_224.png")
+        st.write("\n")        
+        
+        st.markdown("""<div style='text-align: center;'>Confusion matrix</div>""", unsafe_allow_html=True)
+        st.image("src/visualization/Transfer_Learning_param_tests/TL_VGG16_unfrozen_224_CM.png")
         st.write("\n")
 
-        # Summary of metrics
-        st.markdown("**Metrics summary**")
+    
+    with tab6: # Fine tuning with VGG16 
+        st.write("In this section we went deeper into the optimization of the model with VGG16. From the previous trainings we observed dramatic improvements with some parameter changes, as we see in the following table:")
+        # Summary of previous metrics
+        st.markdown("**Previous metrics summary**")
         data2 = {
         'Model': [
             'VGG16 unfrozen', 'VGG16 partly frozen', 'VGG16 unfrozen lr 10E-4', 'VGG16 unfrozen size 224x224'
@@ -769,105 +779,105 @@ elif page == pages[6]:
 ####################
 
 
-# elif page == pages[6]:
-#     plantpad_url = "http://plantpad.samlab.cn"
-#     st.write("### Predict your plant")
-#     st.write("")
-#     st.write("You can select between three final models:")
-#     st.markdown("- ResNet50 (PyTorch) based on the pre-trained model from [www.plantpad.samlab.cn](%s)" % plantpad_url)
-#     st.markdown("- VGG16 (Keras): all layers unfrozen, fine-tuned with a learning rate of 1e-5 and img size of 224x224")
-#     st.markdown("- MobileNetV2 (Keras): all layers unfrozen, a learning rate of 1e-3 and img size of 256x256")
+elif page == pages[7]:
+    plantpad_url = "http://plantpad.samlab.cn"
+    st.write("### Predict your plant")
+    st.write("")
+    st.write("You can select between three final models:")
+    st.markdown("- ResNet50 (PyTorch) based on the pre-trained model from [www.plantpad.samlab.cn](%s)" % plantpad_url)
+    st.markdown("- VGG16 (Keras): all layers unfrozen, fine-tuned with a learning rate of 1e-5 and img size of 224x224")
+    st.markdown("- MobileNetV2 (Keras): all layers unfrozen, a learning rate of 1e-3 and img size of 256x256")
 
 
-#     # Dropdown menu for selecting a trained model
-#     model_files = [f for f in os.listdir("src/models/") if f.endswith(".keras") or f.endswith(".pth")]
-#     selected_model_file = st.selectbox("Select a trained model:", model_files)
+    # Dropdown menu for selecting a trained model
+    model_files = [f for f in os.listdir("src/models/") if f.endswith(".keras") or f.endswith(".pth")]
+    selected_model_file = st.selectbox("Select a trained model:", model_files)
 
-#     # Drag-and-drop file uploader for image
-#     uploaded_file = st.file_uploader("Upload an image:", type=["jpg", "jpeg", "png"])
+    # Drag-and-drop file uploader for image
+    uploaded_file = st.file_uploader("Upload an image:", type=["jpg", "jpeg", "png"])
 
-#     if uploaded_file is not None:
-#         # Display uploaded image
-#         image = Image.open(uploaded_file)
-#         st.image(image, caption="Uploaded Image",  width=300)
+    if uploaded_file is not None:
+        # Display uploaded image
+        image = Image.open(uploaded_file)
+        st.image(image, caption="Uploaded Image",  width=300)
 
-#         # Load the selected model
-#         model_path = os.path.join("src/models", selected_model_file)
+        # Load the selected model
+        model_path = os.path.join("src/models", selected_model_file)
 
-#         # Calculate predictions and handle confidence probabilities
-#         if selected_model_file.endswith(".keras"):
-#             model = load_keras_model(model_path)
-#             preprocessed_image = preprocess_image(image, model)
-#             predictions = model.predict(preprocessed_image)  # No softmax needed
-#             predicted_idx = np.argmax(predictions[0])
-#             top_predictions = predictions[0].argsort()[-5:][::-1]
-#             probabilities = predictions[0]  # Use raw probabilities as is
-#         elif selected_model_file.endswith(".pth"):
-#             model = load_pytorch_model(model_path)
-#             preprocessed_image = preprocess_image(image, model)
-#             predictions = model(preprocessed_image).detach().numpy()
-#             probabilities = np.exp(predictions[0]) / np.sum(np.exp(predictions[0]))  # Apply softmax for PyTorch
-#             predicted_idx = np.argmax(probabilities)
-#             top_predictions = probabilities.argsort()[-5:][::-1]
-
-
-#         # Load plant and disease class indices
-#         plant_indices = load_class_indices("src/streamlit/class_plant_indices.json")
-#         disease_indices = load_class_indices("src/streamlit/class_disease_indices.json")
-
-#         # Display predicted class name in a table
-#         st.subheader("Model Predictions")
-#         predicted_plant = plant_indices[str(predicted_idx)]  # Assuming diseases are indexed per plant
-#         predicted_disease = disease_indices[str(predicted_idx)]
-#         st.write("**Predicted Plant Type**:", predicted_plant)
-#         st.write("**Predicted Disease Type**:", predicted_disease)
-
-#         # Checkbox for displaying top predictions
-#         display_top_predictions = st.checkbox("Display top predictions")
-
-#         # Display top 5 predictions
-#         if display_top_predictions:
-#             st.subheader("Top Predictions")
-#             sorted_indices = top_predictions  # Already sorted
-#             seen_combinations = set()  # To avoid duplicate combinations
-#             top_pred_table = {
-#                 "Plant Type": [],
-#                 "Disease Type": [],
-#                 "Confidence": []
-#             }
-#             for idx in sorted_indices:
-#                 plant = plant_indices[str(idx)]
-#                 disease = disease_indices[str(idx)]
-#                 combination = (plant, disease)
-#                 if combination not in seen_combinations:  # Avoid duplicates
-#                     seen_combinations.add(combination)
-#                     confidence = probabilities[idx]
-#                     top_pred_table["Plant Type"].append(plant)
-#                     top_pred_table["Disease Type"].append(disease)
-#                     top_pred_table["Confidence"].append(f"{confidence:.2%}")
-#                 if len(top_pred_table["Plant Type"]) == 5:  # Stop at top 5
-#                     break
-
-#             st.table(top_pred_table)
+        # Calculate predictions and handle confidence probabilities
+        if selected_model_file.endswith(".keras"):
+            model = load_keras_model(model_path)
+            preprocessed_image = preprocess_image(image, model)
+            predictions = model.predict(preprocessed_image)  # No softmax needed
+            predicted_idx = np.argmax(predictions[0])
+            top_predictions = predictions[0].argsort()[-5:][::-1]
+            probabilities = predictions[0]  # Use raw probabilities as is
+        elif selected_model_file.endswith(".pth"):
+            model = load_pytorch_model(model_path)
+            preprocessed_image = preprocess_image(image, model)
+            predictions = model(preprocessed_image).detach().numpy()
+            probabilities = np.exp(predictions[0]) / np.sum(np.exp(predictions[0]))  # Apply softmax for PyTorch
+            predicted_idx = np.argmax(probabilities)
+            top_predictions = probabilities.argsort()[-5:][::-1]
 
 
-#     # Checkbox for Grad-CAM
-#     display_grad_cam = st.checkbox("Display Grad-CAM")
+        # Load plant and disease class indices
+        plant_indices = load_class_indices("src/streamlit/class_plant_indices.json")
+        disease_indices = load_class_indices("src/streamlit/class_disease_indices.json")
 
-#     # Generate and display Grad-CAM if selected
-#     if display_grad_cam:
-#         st.subheader("Grad-CAM Visualization")
+        # Display predicted class name in a table
+        st.subheader("Model Predictions")
+        predicted_plant = plant_indices[str(predicted_idx)]  # Assuming diseases are indexed per plant
+        predicted_disease = disease_indices[str(predicted_idx)]
+        st.write("**Predicted Plant Type**:", predicted_plant)
+        st.write("**Predicted Disease Type**:", predicted_disease)
 
-#         gradcam_model_path = f"src/models/plain_architectures/plain_{selected_model_file}"
-#         if selected_model_file.endswith(".keras"):
-#             gradcam_model = load_keras_model(gradcam_model_path)
-#             grad_cam_image = generate_grad_cam_keras(gradcam_model, image, layer_name=None)
-#             st.image(grad_cam_image, caption=f"Grad-CAM of {selected_model_file}", width=300)
+        # Checkbox for displaying top predictions
+        display_top_predictions = st.checkbox("Display top predictions")
+
+        # Display top 5 predictions
+        if display_top_predictions:
+            st.subheader("Top Predictions")
+            sorted_indices = top_predictions  # Already sorted
+            seen_combinations = set()  # To avoid duplicate combinations
+            top_pred_table = {
+                "Plant Type": [],
+                "Disease Type": [],
+                "Confidence": []
+            }
+            for idx in sorted_indices:
+                plant = plant_indices[str(idx)]
+                disease = disease_indices[str(idx)]
+                combination = (plant, disease)
+                if combination not in seen_combinations:  # Avoid duplicates
+                    seen_combinations.add(combination)
+                    confidence = probabilities[idx]
+                    top_pred_table["Plant Type"].append(plant)
+                    top_pred_table["Disease Type"].append(disease)
+                    top_pred_table["Confidence"].append(f"{confidence:.2%}")
+                if len(top_pred_table["Plant Type"]) == 5:  # Stop at top 5
+                    break
+
+            st.table(top_pred_table)
 
 
-#         elif selected_model_file.endswith(".pth"):
-#             gradcam_model = load_pytorch_model(model_path)
-#             grad_cam_image = generate_grad_cam_pytorch(gradcam_model, image)
-#             st.image(grad_cam_image, caption=f"Grad-CAM of {selected_model_file}", width=300)
+    # Checkbox for Grad-CAM
+    display_grad_cam = st.checkbox("Display Grad-CAM")
+
+    # Generate and display Grad-CAM if selected
+    if display_grad_cam:
+        st.subheader("Grad-CAM Visualization")
+
+        gradcam_model_path = f"src/models/plain_architectures/plain_{selected_model_file}"
+        if selected_model_file.endswith(".keras"):
+            gradcam_model = load_keras_model(gradcam_model_path)
+            grad_cam_image = generate_grad_cam_keras(gradcam_model, image, layer_name=None)
+            st.image(grad_cam_image, caption=f"Grad-CAM of {selected_model_file}", width=300)
+
+
+        elif selected_model_file.endswith(".pth"):
+            gradcam_model = load_pytorch_model(model_path)
+            grad_cam_image = generate_grad_cam_pytorch(gradcam_model, image)
+            st.image(grad_cam_image, caption=f"Grad-CAM of {selected_model_file}", width=300)
 
     

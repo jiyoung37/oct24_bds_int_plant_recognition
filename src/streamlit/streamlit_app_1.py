@@ -95,16 +95,21 @@ elif page == pages[2]:
 
 
     with tab1:
+        st.write('''
+        The following graphs give us an idea of the distribution of our dataset regarding the different plant species available and their diseases.
+        ''')
         st.markdown("- Species")
         st.image("src/visualization/Data_Exploration/DExp_species_distribution.png")
 
         st.markdown("- Diseases")
         st.image("src/visualization/Data_Exploration/DExp_diseases_distribution.png")
     
-        st.markdown("""<span style='color: red;'>*The data shows a reasonable inbalance with the tomato class, but the number of total images for the other categories is high enough to use all of them for the modelling.</span>""", unsafe_allow_html=True)
+        st.markdown("""<span style='color: red;'>The data shows a reasonable inbalance with the tomato class, but the number of total images for the other categories is high enough to use all of them for the modelling.</span>""", unsafe_allow_html=True)
 
     with tab2:
-        
+        st.write('''
+        In here, we take a deeper insight of the distribution of our classes comparing the training dataset versus the valid dataset and their overall proportions.
+        ''')
         st.markdown("- Species")
         st.image("src/visualization/Data_Exploration/Dexp_TrainValid_species.png")
 
@@ -112,13 +117,16 @@ elif page == pages[2]:
         st.image("src/visualization/Data_Exploration/DExp_TrainValid_diseases.png")
 
     with tab3:
-        st.write("Confusion matrix between species and diseases")
+        st.write("The confusion matrix between species and diseases reveals the variability in the data and helps identify if a species is overrepresented or underrepresented.")
         st.image("src/visualization/Data_Exploration/DExp_CM_species_diseases.png")
-        st.markdown("""<span style='color: red;'>*Some species do not contain any disease examples and some species do not contain healthy examples.</span>""", unsafe_allow_html=True)
+        st.markdown("""<span style='color: red;'>We clearly observe that some species do not contain any disease examples and some species do not contain healthy examples.</span>""", unsafe_allow_html=True)
 
 
     with tab4:
-        st.write("The data can be filtered in order to remove background or detect edges")
+        st.write('''
+        To optimize the dataset, data transformations can be applied before training. This can help improve the model by, for example, emphasizing important features or removing unnecessary details, which can also save computational resources.
+        Here we have filtered the images to remove background or detect edges.
+        ''')
         st.markdown("1. Thresholding")
         st.image("src/visualization/Data_Exploration/DExp_thresholding_filter.png")
 
@@ -436,7 +444,7 @@ elif page == pages[4]:
         df = pd.DataFrame(data)
         df.set_index ('Model', inplace=True)       
         st.dataframe(df)
-        st.markdown("""<span style='color: red;'>Whereas there was only a small difference in the MobileNetV2 models, whether all layers were unfrozen or not, in the case of VGG16, there was a dramatic improvement when only the last block of layers is unfrozen</span>""", unsafe_allow_html=True)
+        st.write("While there was only a small difference in performance between the MobileNetV2 models, regardless of whether all layers were unfrozen or not, the VGG16 model showed a dramatic improvement when only the last block of layers was unfrozen.")
         st.write("\n")
 
     with tab4:  # Modification of learning rate
@@ -578,8 +586,44 @@ elif page == pages[5]:
 
 elif page == pages[6]:
     st.write("### Conclusion")
-    st.write("### 1st paragraph")
-    st.write("### 2nd paragraph")
+    st.write('''
+    This study explored the evolution of image classification models, from basic CNNs to advanced transfer learning techniques. 
+    The use of pre-trained models like MobileNetV2, ResNet50 and VGG16, combined with fine-tuning and layer unfreezing, led to significant performance improvements, achieving near-perfect accuracy. 
+    The results show that model performance depends on factors like learning rates, layer freezing, and optimization, with transfer learning offering the best results.\n
+    The 3 best models obtained, according to the metrics and preformance, were:    
+    ''')
+
+    data3 = {
+    'Model': ['MobileNetV2', 'VGG16', 'ResNet 50'],
+    'Image Size': ['256x256', '224x224', '256x256'],
+    'LR': ['10E-3', '10E-4', '10E-4'],
+    'Freezing': ['All unfrozen', '2 step unfrozen', 'All frozen'],
+    'Training Accuracy': [0.99, 0.9993, 1.00],
+    'Training Loss': [0.02, 0.0030, 0.01],
+    'Validation Accuracy': [0.99, 0.997, 1.00],
+    'Validation Loss': [0.05, 0.0089, 0.01],
+    'Test Accuracy': [1.00, 1.00, 1.00]
+    }
+
+    df3 = pd.DataFrame(data3)
+    df3.set_index ('Model', inplace=True)       
+    st.dataframe(df3)
+    st.write("\n")
+    st.write("\n")
+    
+    st.write('''
+    We chose GradCAM as the interpretation method because it provides clear, visual insights. Its heatmaps highlight the importance of each pixel in relation to the predicted class in a given layer by adjusting the intensity of the pixels. 
+    This makes it easier for users to understand and trust the model's decision-making process, increasing confidence in its interpretability.\n
+    The following image shows two examples of the gradients obtained by the camera in a model using VGG16:
+
+    ''')
+    st.image("src/visualization/Conclusion/GC_VGG16_example.png")
+
+    st.write('''
+    The observation of the GradCam images suggests that models can have significantly different focus areas. While some models, like VGG16, focus on the object for feature extraction, others may focus more on the background of the image. 
+    These differing approaches can lead to varying results depending on the specific image being classified.
+    ''')
+    st.write("**Therefore, we can conclude that here is no one-size-fits-all approach that guarantees the best results. The effectiveness of each method depends on how well it is optimized and the resources required for it.**")
 
 
 ####################

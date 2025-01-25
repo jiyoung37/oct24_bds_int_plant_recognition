@@ -1,237 +1,237 @@
 import streamlit as st
 import os
 import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-import json
-from PIL import Image
+# import numpy as np
+# import matplotlib.pyplot as plt
+# import json
+# from PIL import Image
 
-import tensorflow as tf
-import tensorflow.keras.backend as K
-from tensorflow.keras.models import Model
-from tensorflow.keras.preprocessing.image import img_to_array, array_to_img
+# import tensorflow as tf
+# import tensorflow.keras.backend as K
+# from tensorflow.keras.models import Model
+# from tensorflow.keras.preprocessing.image import img_to_array, array_to_img
 
-import torch
-from torchvision import transforms
-import torch.nn as nn
-import torchvision.models as models
+# import torch
+# from torchvision import transforms
+# import torch.nn as nn
+# import torchvision.models as models
 
-# Function to load Keras model
-def load_keras_model(file_path):
-    return tf.keras.models.load_model(file_path)
+# # Function to load Keras model
+# def load_keras_model(file_path):
+#     return tf.keras.models.load_model(file_path)
 
-# Function to load PyTorch model
-def load_pytorch_model(file_path):
-    model = CustomResNet50(num_classes=38)
-    model.load_state_dict(torch.load(file_path))
-    model.eval()
-    return model
+# # Function to load PyTorch model
+# def load_pytorch_model(file_path):
+#     model = CustomResNet50(num_classes=38)
+#     model.load_state_dict(torch.load(file_path))
+#     model.eval()
+#     return model
 
-# Load class indices from a JSON file
-def load_class_indices(file_path):
-    with open(file_path, "r") as f:
-        return json.load(f)
+# # Load class indices from a JSON file
+# def load_class_indices(file_path):
+#     with open(file_path, "r") as f:
+#         return json.load(f)
 
-# Function to preprocess the uploaded image
-def preprocess_image(image, model):
-    """
-    Preprocess an image to match the input size of the given model.
+# # Function to preprocess the uploaded image
+# def preprocess_image(image, model):
+#     """
+#     Preprocess an image to match the input size of the given model.
 
-    Parameters:
-        image (PIL.Image): The input image.
-        model: The trained model (Keras or PyTorch).
+#     Parameters:
+#         image (PIL.Image): The input image.
+#         model: The trained model (Keras or PyTorch).
 
-    Returns:
-        np.ndarray: The preprocessed image array for Keras.
-        torch.Tensor: The preprocessed image tensor for PyTorch.
-    """
-    if isinstance(model, tf.keras.Model):  # For Keras models
-        input_shape = model.input_shape[1:3]  # Extract input size from the model
-        resized_image = image.resize(input_shape)
-        image_array = np.array(resized_image) / 255.0
-        image_array = np.expand_dims(image_array, axis=0)  # Add batch dimension
-        return image_array
-    elif isinstance(model, torch.nn.Module):  # For PyTorch models
-        input_size = 256  # Default input size for many PyTorch models
-        transform = transforms.Compose([
-            transforms.Resize((input_size, input_size)),  # Resize to input size
-            transforms.ToTensor(),
-        ])
-        return transform(image).unsqueeze(0)  # Add batch dimension
-    else:
-        raise ValueError("Unsupported model type. Please provide a Keras or PyTorch model.")
+#     Returns:
+#         np.ndarray: The preprocessed image array for Keras.
+#         torch.Tensor: The preprocessed image tensor for PyTorch.
+#     """
+#     if isinstance(model, tf.keras.Model):  # For Keras models
+#         input_shape = model.input_shape[1:3]  # Extract input size from the model
+#         resized_image = image.resize(input_shape)
+#         image_array = np.array(resized_image) / 255.0
+#         image_array = np.expand_dims(image_array, axis=0)  # Add batch dimension
+#         return image_array
+#     elif isinstance(model, torch.nn.Module):  # For PyTorch models
+#         input_size = 256  # Default input size for many PyTorch models
+#         transform = transforms.Compose([
+#             transforms.Resize((input_size, input_size)),  # Resize to input size
+#             transforms.ToTensor(),
+#         ])
+#         return transform(image).unsqueeze(0)  # Add batch dimension
+#     else:
+#         raise ValueError("Unsupported model type. Please provide a Keras or PyTorch model.")
 
-# Custom ResNet50 class to define our TL architecture
-class CustomResNet50(nn.Module):
-    def __init__(self, num_classes):
-        super(CustomResNet50, self).__init__()
+# # Custom ResNet50 class to define our TL architecture
+# class CustomResNet50(nn.Module):
+#     def __init__(self, num_classes):
+#         super(CustomResNet50, self).__init__()
 
-        # Initialize the base model without pre-trained weights
-        self.base_model = models.resnet50(pretrained=False)
+#         # Initialize the base model without pre-trained weights
+#         self.base_model = models.resnet50(pretrained=False)
 
         
-        # Modify the final fully connected layer to match the pre-trained model from the .pth file
-        num_ftrs = self.base_model.fc.in_features
-        self.base_model.fc = nn.Linear(num_ftrs, 120)
+#         # Modify the final fully connected layer to match the pre-trained model from the .pth file
+#         num_ftrs = self.base_model.fc.in_features
+#         self.base_model.fc = nn.Linear(num_ftrs, 120)
       
-        # Initialize the base model and load custom weights
-        state_dict = torch.load('src/models/model_src/ResNet50-Plant-model-80.pth', map_location=torch.device('cpu'))
-        self.base_model.load_state_dict(state_dict)
+#         # Initialize the base model and load custom weights
+#         state_dict = torch.load('src/models/model_src/ResNet50-Plant-model-80.pth', map_location=torch.device('cpu'))
+#         self.base_model.load_state_dict(state_dict)
       
-        # Modify the classifier
-        num_ftrs = self.base_model.fc.in_features
-        self.base_model.fc = nn.Identity()  # Remove the original FC layer
+#         # Modify the classifier
+#         num_ftrs = self.base_model.fc.in_features
+#         self.base_model.fc = nn.Identity()  # Remove the original FC layer
       
-        self.classifier = nn.Sequential(
-            nn.Linear(num_ftrs, 1024),
-            nn.ReLU(),
-            nn.Dropout(0.2),
-            nn.Linear(1024, 512),
-            nn.ReLU(),
-            nn.Dropout(0.2),
-            nn.Linear(512, num_classes)
-        )
+#         self.classifier = nn.Sequential(
+#             nn.Linear(num_ftrs, 1024),
+#             nn.ReLU(),
+#             nn.Dropout(0.2),
+#             nn.Linear(1024, 512),
+#             nn.ReLU(),
+#             nn.Dropout(0.2),
+#             nn.Linear(512, num_classes)
+#         )
 
-    def forward(self, x):
-        x = self.base_model(x)
-        x = self.classifier(x)  # Return raw logits
-        return x
+#     def forward(self, x):
+#         x = self.base_model(x)
+#         x = self.classifier(x)  # Return raw logits
+#         return x
 
 
-# Grad-CAM function for Keras
-def generate_grad_cam_keras(model, image, layer_name=None):
-    # Automatically detect the input size of the model
-    input_shape = model.input_shape[1:3]  # Get height and width of the input layer
+# # Grad-CAM function for Keras
+# def generate_grad_cam_keras(model, image, layer_name=None):
+#     # Automatically detect the input size of the model
+#     input_shape = model.input_shape[1:3]  # Get height and width of the input layer
 
-    # Resize the input image to match the model's input size
-    resized_image = image.resize(input_shape)
-    img_array = img_to_array(resized_image) / 255.0
-    img_array = np.expand_dims(img_array, axis=0)
+#     # Resize the input image to match the model's input size
+#     resized_image = image.resize(input_shape)
+#     img_array = img_to_array(resized_image) / 255.0
+#     img_array = np.expand_dims(img_array, axis=0)
 
-    # If layer_name is not provided, find the last convolutional layer
-    if not layer_name:
-        layer_name = next(
-            (layer.name for layer in model.layers[::-1] if isinstance(layer, tf.keras.layers.Conv2D)),
-            None
-        )
-        if not layer_name:
-            raise ValueError("No convolutional layer found in the model.")
+#     # If layer_name is not provided, find the last convolutional layer
+#     if not layer_name:
+#         layer_name = next(
+#             (layer.name for layer in model.layers[::-1] if isinstance(layer, tf.keras.layers.Conv2D)),
+#             None
+#         )
+#         if not layer_name:
+#             raise ValueError("No convolutional layer found in the model.")
 
-    # Create a model that maps inputs to activations of the target layer and model output
-    grad_model = Model(inputs=model.input, outputs=[model.get_layer(layer_name).output, model.output])
+#     # Create a model that maps inputs to activations of the target layer and model output
+#     grad_model = Model(inputs=model.input, outputs=[model.get_layer(layer_name).output, model.output])
 
-    # Record operations for automatic differentiation
-    with tf.GradientTape() as tape:
-        conv_outputs, predictions = grad_model(img_array)
-        predicted_class = tf.argmax(predictions[0])
-        loss = predictions[:, predicted_class]
+#     # Record operations for automatic differentiation
+#     with tf.GradientTape() as tape:
+#         conv_outputs, predictions = grad_model(img_array)
+#         predicted_class = tf.argmax(predictions[0])
+#         loss = predictions[:, predicted_class]
 
-    # Compute the gradient of the loss with respect to the feature map
-    grads = tape.gradient(loss, conv_outputs)
-    pooled_grads = tf.reduce_mean(grads, axis=(0, 1, 2))
+#     # Compute the gradient of the loss with respect to the feature map
+#     grads = tape.gradient(loss, conv_outputs)
+#     pooled_grads = tf.reduce_mean(grads, axis=(0, 1, 2))
 
-    # Compute the Grad-CAM heatmap
-    conv_outputs = conv_outputs[0]
-    heatmap = tf.reduce_sum(pooled_grads * conv_outputs, axis=-1)
+#     # Compute the Grad-CAM heatmap
+#     conv_outputs = conv_outputs[0]
+#     heatmap = tf.reduce_sum(pooled_grads * conv_outputs, axis=-1)
 
-    # Normalize the heatmap
-    heatmap = tf.maximum(heatmap, 0)
-    max_value = tf.reduce_max(heatmap)
-    if max_value > 0:
-        heatmap /= max_value
-    heatmap = heatmap.numpy()
+#     # Normalize the heatmap
+#     heatmap = tf.maximum(heatmap, 0)
+#     max_value = tf.reduce_max(heatmap)
+#     if max_value > 0:
+#         heatmap /= max_value
+#     heatmap = heatmap.numpy()
 
-    # Resize the heatmap to the original image size
-    heatmap = np.uint8(255 * heatmap)
-    heatmap = Image.fromarray(heatmap).resize(image.size, resample=Image.BILINEAR)
+#     # Resize the heatmap to the original image size
+#     heatmap = np.uint8(255 * heatmap)
+#     heatmap = Image.fromarray(heatmap).resize(image.size, resample=Image.BILINEAR)
 
-    # Overlay the heatmap on the image
-    heatmap = np.array(heatmap)
-    colormap = plt.cm.jet(heatmap / 255.0)[:, :, :3]  # Apply colormap
-    overlay = (colormap * 255).astype(np.uint8)
-    overlay_image = Image.blend(image.convert("RGBA"), Image.fromarray(overlay).convert("RGBA"), alpha=0.5)
+#     # Overlay the heatmap on the image
+#     heatmap = np.array(heatmap)
+#     colormap = plt.cm.jet(heatmap / 255.0)[:, :, :3]  # Apply colormap
+#     overlay = (colormap * 255).astype(np.uint8)
+#     overlay_image = Image.blend(image.convert("RGBA"), Image.fromarray(overlay).convert("RGBA"), alpha=0.5)
 
-    return overlay_image
+#     return overlay_image
 
-# Grad-CAM function for PyTorch
-def generate_grad_cam_pytorch(model, image, target_layer_name=None):
-    """
-    Generate Grad-CAM visualization for a PyTorch model.
+# # Grad-CAM function for PyTorch
+# def generate_grad_cam_pytorch(model, image, target_layer_name=None):
+#     """
+#     Generate Grad-CAM visualization for a PyTorch model.
   
-    Parameters:
-        model: PyTorch model
-        image: PIL Image (input image)
-        layer_name: str (name of the target convolutional layer), if not provided the function iterates through the
-                    model's layer in reverse and finds the last Conv2d layer
+#     Parameters:
+#         model: PyTorch model
+#         image: PIL Image (input image)
+#         layer_name: str (name of the target convolutional layer), if not provided the function iterates through the
+#                     model's layer in reverse and finds the last Conv2d layer
 
-    Returns:
-        PIL Image with the Grad-CAM overlay
-    """
-    from torch.nn import Conv2d
+#     Returns:
+#         PIL Image with the Grad-CAM overlay
+#     """
+#     from torch.nn import Conv2d
 
-    # Automatically detect the last convolutional layer if target_layer_name is not provided
-    if target_layer_name is None:
-        for name, module in reversed(list(model.named_modules())):
-            if isinstance(module, Conv2d):
-                target_layer_name = name
-                break
-        if target_layer_name is None:
-            raise ValueError("No convolutional layer found in the model.")
+#     # Automatically detect the last convolutional layer if target_layer_name is not provided
+#     if target_layer_name is None:
+#         for name, module in reversed(list(model.named_modules())):
+#             if isinstance(module, Conv2d):
+#                 target_layer_name = name
+#                 break
+#         if target_layer_name is None:
+#             raise ValueError("No convolutional layer found in the model.")
 
-    # Transform and preprocess the image
-    transform = transforms.Compose([
-        transforms.Resize((256, 256)),  # Resize to the input size of the model
-        transforms.ToTensor(),
-    ])
-    torch_image = transform(image).unsqueeze(0)  # Add batch dimension
+#     # Transform and preprocess the image
+#     transform = transforms.Compose([
+#         transforms.Resize((256, 256)),  # Resize to the input size of the model
+#         transforms.ToTensor(),
+#     ])
+#     torch_image = transform(image).unsqueeze(0)  # Add batch dimension
 
-    # Hook to capture gradients and activations
-    gradients = []
-    activations = []
+#     # Hook to capture gradients and activations
+#     gradients = []
+#     activations = []
 
-    def save_gradients(module, grad_input, grad_output):
-        gradients.append(grad_output[0])
+#     def save_gradients(module, grad_input, grad_output):
+#         gradients.append(grad_output[0])
 
-    def save_activations(module, input, output):
-        activations.append(output)
+#     def save_activations(module, input, output):
+#         activations.append(output)
 
-    # Register hooks on the target layer
-    target_layer = dict(model.named_modules())[target_layer_name]
-    target_layer.register_forward_hook(save_activations)
-    target_layer.register_backward_hook(save_gradients)
+#     # Register hooks on the target layer
+#     target_layer = dict(model.named_modules())[target_layer_name]
+#     target_layer.register_forward_hook(save_activations)
+#     target_layer.register_backward_hook(save_gradients)
 
-    # Forward pass
-    model.eval()
-    output = model(torch_image)
-    class_index = output.argmax(dim=1).item()
+#     # Forward pass
+#     model.eval()
+#     output = model(torch_image)
+#     class_index = output.argmax(dim=1).item()
 
-    # Backward pass for the target class
-    model.zero_grad()
-    loss = output[0, class_index]
-    loss.backward()
+#     # Backward pass for the target class
+#     model.zero_grad()
+#     loss = output[0, class_index]
+#     loss.backward()
 
-    # Compute Grad-CAM
-    gradients = gradients[0].detach().cpu().numpy()
-    activations = activations[0].detach().cpu().numpy()
-    weights = np.mean(gradients, axis=(2, 3))  # Global average pooling of gradients
-    grad_cam = np.zeros(activations.shape[2:], dtype=np.float32)
-    for i, w in enumerate(weights[0]):
-        grad_cam += w * activations[0, i, :, :]
+#     # Compute Grad-CAM
+#     gradients = gradients[0].detach().cpu().numpy()
+#     activations = activations[0].detach().cpu().numpy()
+#     weights = np.mean(gradients, axis=(2, 3))  # Global average pooling of gradients
+#     grad_cam = np.zeros(activations.shape[2:], dtype=np.float32)
+#     for i, w in enumerate(weights[0]):
+#         grad_cam += w * activations[0, i, :, :]
 
-    grad_cam = np.maximum(grad_cam, 0)
-    grad_cam = grad_cam / grad_cam.max() if grad_cam.max() != 0 else grad_cam
+#     grad_cam = np.maximum(grad_cam, 0)
+#     grad_cam = grad_cam / grad_cam.max() if grad_cam.max() != 0 else grad_cam
 
-    # Resize heatmap to match original image size
-    grad_cam = np.uint8(255 * grad_cam)
-    heatmap = Image.fromarray(grad_cam).resize(image.size, resample=Image.BILINEAR)
+#     # Resize heatmap to match original image size
+#     grad_cam = np.uint8(255 * grad_cam)
+#     heatmap = Image.fromarray(grad_cam).resize(image.size, resample=Image.BILINEAR)
 
-    # Overlay heatmap on the image
-    heatmap = np.array(heatmap)
-    colormap = plt.cm.jet(heatmap / 255.0)[:, :, :3]  # Apply colormap
-    overlay = (colormap * 255).astype(np.uint8)
-    overlay_image = Image.blend(image.convert("RGBA"), Image.fromarray(overlay).convert("RGBA"), alpha=0.5)
+#     # Overlay heatmap on the image
+#     heatmap = np.array(heatmap)
+#     colormap = plt.cm.jet(heatmap / 255.0)[:, :, :3]  # Apply colormap
+#     overlay = (colormap * 255).astype(np.uint8)
+#     overlay_image = Image.blend(image.convert("RGBA"), Image.fromarray(overlay).convert("RGBA"), alpha=0.5)
 
-    return overlay_image
+#     return overlay_image
 
 # Load the CSV file into a DataFrame
 df = pd.read_csv("src/streamlit/plant_dataset.csv")
@@ -662,17 +662,27 @@ elif page == pages[4]:
         st.markdown("""<div style='text-align: center;'>Metrics history</div>""", unsafe_allow_html=True)
         st.image("src/visualization/Transfer_Learning_param_tests/TL_VGG16_unfrozen_lr10e-4.png")
         st.write("\n")
+
         st.markdown("""<div style='text-align: center;'>Confusion matrix</div>""", unsafe_allow_html=True)
         st.image("src/visualization/Transfer_Learning_param_tests/TL_VGG16_unfrozen_lr10e-4_CM.png")
         st.write("\n")
 
-        st.markdown("**2) Change of input image size to 224x224**")
+    with tab5: # Modification of the image size
+        st.write("In this section we changed the input image size from 256x256 to 224x224 to see how this could change the training for the model with VGG16, while keeping the learning rate of 0.001, which gave the bad results.")
+        st.markdown("<h2 style='text-align: center; color: green;'>VGG16 </h2>", unsafe_allow_html=True)
         st.markdown("""<div style='text-align: center;'>Metrics history</div>""", unsafe_allow_html=True)
         st.image("src/visualization/Transfer_Learning_param_tests/TL_VGG16_unfrozen_224.png")
+        st.write("\n")        
+        
+        st.markdown("""<div style='text-align: center;'>Confusion matrix</div>""", unsafe_allow_html=True)
+        st.image("src/visualization/Transfer_Learning_param_tests/TL_VGG16_unfrozen_224_CM.png")
         st.write("\n")
 
-        # Summary of metrics
-        st.markdown("**Metrics summary**")
+    
+    with tab6: # Fine tuning with VGG16 
+        st.write("In this section we went deeper into the optimization of the model with VGG16. From the previous trainings we observed dramatic improvements with some parameter changes, as we see in the following table:")
+        # Summary of previous metrics
+        st.markdown("**Previous metrics summary**")
         data2 = {
         'Model': [
             'VGG16 unfrozen', 'VGG16 partly frozen', 'VGG16 unfrozen lr 10E-4', 'VGG16 unfrozen size 224x224'
@@ -690,10 +700,6 @@ elif page == pages[4]:
         st.write("\n")
         st.write("\n")
     
-    with tab5:
-        st.write("Paste in what is meant to be here.")
-    
-    with tab6:    
         st.markdown('''
         After learning the parameters that worked well, we decided to fine-tune the modelling part until we optimized the training with VGG16.  
         The changed parameters that gave the best performance were:
@@ -765,7 +771,7 @@ elif page == pages[4]:
         st.write("")
         st.write("""Lowering the learning rate improves the validation loss on an absolute scale but the fluctuations during training 
                  are still observable. This raises the question wether the architecture itself 
-""")
+        """)
 
 ####################
 # MODEL INTERPRET  #
@@ -896,4 +902,5 @@ elif page == pages[7]:
         elif selected_model_file.endswith(".pth"):
             gradcam_model = load_pytorch_model(model_path)
             grad_cam_image = generate_grad_cam_pytorch(gradcam_model, image)
+
             st.image(grad_cam_image, caption=f"Grad-CAM of {selected_model_file}", width=300)

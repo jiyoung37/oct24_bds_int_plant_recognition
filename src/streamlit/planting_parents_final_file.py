@@ -250,11 +250,10 @@ if page == pages[0]:
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         st.image("src/visualization/Planting_parents_logo.png", use_container_width=True)
-        st.header("Introduction")
 
     st.write("Welcome to the site of the Planting Parents, where we have trained an AI model to recognise 14 different species of plants and whether they are sick or healthy by analysing 20 plant diseases."
             " We're a group of young parents who value life and share an interest in growing plant life as well. It has been a great and rewarding challenge to present to you this app with our findings and results." 
-            " We sincerely hope you enjoy our page and that you may find it informative and recognise the plants you want to recognise. ")
+            " We sincerely hope you enjoy our page and that you may find it informative and recognise the plants you want to recognise on our 'Predict your plant' page. ")
     st.write("**The planting parents,**")
     st.write("**Lara, Ji-Young, Yannik & Niels**")
 
@@ -265,8 +264,7 @@ if page == pages[0]:
 
 
 elif page == pages[1]:
-    st.write("In the data overview we'll go a bit deeper in the data we've explored and the data we ultimately used after which we defined our pre-processing steps ready to be analysed for the exploration phase of the project." 
-              " Click through the tabs below to learn more: ")
+    st.write("### Data overview")
     
     tab1, tab2, tab3 = st.tabs(["The numbers", "plants & diseases", "Pre-processing steps"])
     
@@ -276,15 +274,15 @@ elif page == pages[1]:
         st.write("""
             We work with a database called ‘New Plant Diseases Dataset’ which is a public repository available on Kaggle.
 
-It includes multiple subfolders; Train, Valid and Test. These subfolders contain subfolders per plant where the target image files (jpg) are stored, totalling 87,900 images.
-
-    Files in train_path:            70,295
-    Files in valid_path:            17,572
-    Files in test_path:                 33
-    Total files:                    87,900
+    It includes multiple subfolders; Train, Valid and Test. These subfolders contain subfolders per plant where the target image files (jpg) are stored, totalling 87,900 images.
+    All images have 256 x 256 as their image size:
+                 
+            Files in train_path:            70,295
+        Files in valid_path:            17,572
+        Files in test_path:                 33
+        Total files:                    87,900
                  """)
-        st.write("\n", "Data Frame shape:", "\n", df.shape, "\n")
-        st.write("All images have 256 * 256 as their image size.")
+        
         st.write("In the below table overview you'll find all the names of the plant species and plant diseases: ")
         st.image("src/visualization/Data_Exploration/Plants_&_Diseases_count.png", use_container_width=True)
     
@@ -296,22 +294,30 @@ It includes multiple subfolders; Train, Valid and Test. These subfolders contain
         st.image("src/visualization/Data_Exploration/healthy_plant_samples.png")
 
     with tab3: # Pre-processing steps
-        st.write(""" As for the preprocessing phase we followed these steps to get to the analysis and visualisation phase of the files:
-                 
-                1.1 Import kaggle hub and download dataset. 
-	            1.2 Define the paths.
-	            1.3 Importing necessary libraries for data processing and visualization.
-                1.4 Creating a DataFrame with Train and Valid.
-                1.5 Check for missing values and duplicates between train and valid subset.
+        st.write("As for the preprocessing phase we followed these steps to get to the analysis and visualisation phase of the files:")
+        
+        st.write("")
 
-        The data was already well sorted, indexed and labelled. We only had to create an import path and created lists to work of from: 
-        # Initialize lists
-        image_paths = []
-        species_labels = []
-        disease_labels = []
-        dataset_split = []
+        st.write("""
+        - Import kaggle hub and download dataset.
+        - Define the paths.
+        - Importing necessary libraries for data processing and visualization.
+        - Creating a DataFrame with Train and Valid.
+        - Check for missing values and duplicates between train and valid subset.
+                 """)
 
-        We looked for missing values and duplicates even crosschecked between the train and valid folders and found none. """)
+        st.write("")
+
+        st.write("The data was already well sorted, indexed and labelled. We only had to create an import path and created lists to work of from:")
+        
+        st.write("""
+        - image_paths = []
+        - species_labels = []
+        - disease_labels = []
+        - dataset_split = []
+        """)
+
+        st.write("We looked for missing values and duplicates even cross checked between the train and valid folders and found none. ")
 
 
 ####################
@@ -321,7 +327,7 @@ It includes multiple subfolders; Train, Valid and Test. These subfolders contain
 
 elif page == pages[2]:
     
-    st.write("#### Data Exploration")
+    st.write("### Data Exploration")
 
     tab1, tab2, tab3, tab4 = st.tabs(["General distribution", "Train vs validation ditribution", "Confusion matrix", "Data Transformation"])
 
@@ -439,7 +445,7 @@ elif page == pages[3]:
         st.image("src/visualization/CNN/1_CNN_Dataset_graph+cm.png", use_container_width=True)
 
         container = st.container(border=True)
-        container.write("this is summary")
+        container.write("this is the summary")
 
     with tab3: # Image size
         st.write("In this section, we tested different image sizes.")
@@ -465,7 +471,7 @@ elif page == pages[3]:
             st.image("src/visualization/CNN/3_CNN_Learningrate_cm.png", use_container_width=True)
 
         container = st.container(border=True)
-        container.write("this is summary")
+        container.write("this is the summary")
     
     with tab5: # Augmentation
         st.write("In this section, we evaluated the impact of augmentation on model performance.")
@@ -476,7 +482,7 @@ elif page == pages[3]:
             st.image("src/visualization/CNN/4_CNN_Augmentation_cm.png", use_container_width=True)
 
         container = st.container(border=True)
-        container.write("this is summary")
+        container.write("this is the summary")
     
     with tab6: # CNN layer
         st.write("In this section, we evaluated the impact of the number of convoluted layers on model performance.")
@@ -487,7 +493,7 @@ elif page == pages[3]:
             st.image("src/visualization/CNN/5_CNN_layer_cm.png", use_container_width=True)
 
         container = st.container(border=True)
-        container.write("this is summary")
+        container.write("this is the summary")
 
 
 elif page == pages[4]:
@@ -496,14 +502,10 @@ elif page == pages[4]:
     tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(["Transfer Learning", "All layers frozen", "Unfreezing of layers","Learning rate", "Image size", "Fine tuning", "Pre-trained PyTorch"])
     
     with tab1:
-        st.write("After the basic CNN modelling, we incorporated pretrained models into our training that were already designed to be used in visual object recognitions. We considered some of teh most common models and applied different parameter tuning to the ones tha gave the best resu")
-        st.write("**Pre-trained models**")
-        st.markdown("· MobileNetV2")
-        st.markdown("· VGG16")
-        st.markdown("· ResNet 101")
-        st.markdown("· ResNet 50")
-        st.markdown("· EfficientNetV2")
+        st.write("After the basic CNN modelling, we incorporated pretrained models into our training that were already designed to be used in visual object recognitions. We considered some of the most common models and applied different parameter tuning to the ones that gave the best results.")
         st.write("\n")
+        st.write("\n")
+
         # Parameters
         st.write("**Initial Parameters**")
         params = {
@@ -521,10 +523,16 @@ elif page == pages[4]:
         st.markdown(parameters.style.hide(axis="index").to_html(), unsafe_allow_html=True)
         st.write("\n")
         st.write("\n")
+        
+        st.write("**Pre-trained models:**")
+        st.write("""
+        - MobileNetV2
+        - VGG16
+        - ResNet 101
+        - ResNet 50
+        - EfficientNetV2
+                 """)
         st.write("\n")
-        st.write("\n")
-
-    
 
     with tab2: # Transfer Learning  # All layers frozen (Niels)
              
@@ -770,7 +778,7 @@ elif page == pages[4]:
         st.write("")
         st.write("")
         st.write("""Lowering the learning rate improves the validation loss on an absolute scale but the fluctuations during training 
-                 are still observable. This raises the question wether the architecture itself 
+                 are still observable. This raises the question whether the architecture itself.
         """)
 
 ####################
@@ -792,10 +800,48 @@ elif page == pages[5]:
 ####################
 
 
-elif page == pages[6]:
+elif page == pages[6]: 
     st.write("### Conclusion")
-    st.write("### 1st paragraph")
-    st.write("### 2nd paragraph")
+    
+    tab1, tab2, tab3 = st.tabs(["Results", "Future perspectives", "Remarks"])
+    
+    with tab1:
+
+        # Summary of metrics
+        st.markdown("**Metrics summary**")
+        data_conclusion = {
+        'Model': [
+        'MobileNetV2', 'VGG16', 
+        'ResNet 50'
+        ],
+        'Image size': ["256 x 256", "224 x 224", "256 x 256"],
+        'Learnin rate': ["10E-3", "10E-4", "10E-4"],
+        'Freezing': ["All unfrozen", "2-step frozen", "All frozen"],
+        'Train-acc': [0.99, 0.9993, 1.0],
+        'Train-loss': [0.02, 0.003, 0.01],
+        'Val-acc': [0.99, 0.997, 1.0],
+        'Val-loss': [0.05, 0.008, 0.01],
+        'Test-acc': [1.0, 1.0, 1.0]
+        }
+
+        # Create DataFrame with the updated values
+        df = pd.DataFrame(data_conclusion)
+        df.set_index ('Model', inplace=True)       
+        st.dataframe(df)
+        st.write("\n")
+        st.write("\n")
+
+        st.write(" The evolution of model performance in this study reflects the transition from basic Convolutional Neural Networks (CNNs) to more sophisticated transfer learning techniques, incorporating both frozen and unfrozen layers, as well as fine-tuning approaches like adjusting learning rates, image size and other parameters.")
+        st.write(" Initially, basic CNN models, such as the sequential 2-layer networks, displayed relatively limited performance. Despite slight improvements across varying learning rates and input image sizes (e.g., 224x224 vs. 256x256), these models struggled with high validation losses, often indicating overfitting or insufficient generalization. Models like the Sequential CNN 2-layer with a learning rate of 0.0001 and a 224x224 input size achieved moderate validation accuracy but still left much to be desired.")
+        st.write(" The next step in the modeling evolution involved transfer learning with pre-trained architectures, such as VGG16, MobileNetV2, and ResNet101, among others, which significantly improved model performance. These models started with the ImageNet weights and frozen layers to retain the learned features from the large-scale dataset, with the best results coming from MobileNetV2 and VGG16, especially when the learning rate was finely tuned. The models with the lowest validation loss and highest validation accuracy were those that used MobileNetV2 (frozen), achieving a near-perfect 0.97 accuracy and low validation loss (0.23), indicating their superior generalization capability over CNN-based models.")
+        st.write(" The next refinement occurred through unfreezing layers in the transfer learning models, allowing fine-tuning of the network on the specific dataset. Models like VGG16 unfrozen and MobileNetV2 unfrozen showed impressive performance, particularly when combined with lower learning rates (e.g., 0.0001), which helped the model converge to an optimal solution. The best performing models in terms of both prediction and validation accuracy were those with fully or partly unfrozen layers, such as VGG16 unfrozen V1-2, where a two-step layer unfreezing was applied. This model achieved a perfect validation accuracy of 1.00 with minimal loss.")
+        st.write(" Finally, we applied transfer learning using a model that was already pre trained on plant images, ResNet50, to see how accurate this model could be with our given dataset. For that, we changed the framework to Pytorch instead of Tensorflow/Keras and compared the performance. Again, reducing the learning rate, gave a dramatic improvement of the metrics performance. However, in this case, all the blocks of layers were kept frozen.")
+
+    with tab2:
+        st.write(" This project provided valuable experience in utilizing deep learning and convolutional neural networks (CNNs) for image classification tasks. We achieved excellent results with a small test dataset. However, the model still requires further refinement to effectively handle and predict large datasets. There are several potential improvements that could enhance model performance. One such option would be the introduction of data transformations, such as thresholding or Canny filtering. Although we mentioned this approach in the data exploration report, we were unable to test it due to programming resource constraints.")
+    
+    with tab3: 
+        st.write("During the course of the project, we faced some limitations. A major challenge was the need to process large image datasets, which necessitated the use of GPUs to significantly reduce the training time of our models. As most team members lacked access to personal GPUs, we primarily relied on Google Colab for our development. While convenient, this presented some drawbacks. A key issue arose from a parameter used to fix the steps per epoch during training, which caused an artifact. This artifact led to fluctuating metrics and reduced the time spent on alternate epochs, ultimately resulting in suboptimal model performance.")
 
 
 ####################

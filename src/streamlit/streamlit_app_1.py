@@ -33,8 +33,7 @@ if page == pages[0]:
 
 
 elif page == pages[1]:
-    st.write("In the data overview we'll go a bit deeper in the data we've explored and the data we ultimately used after which we defined our pre-processing steps ready to be analysed for the exploration phase of the project." 
-              " Click through the tabs below to learn more: ")
+    st.write("### Data overview")
     
     tab1, tab2, tab3 = st.tabs(["The numbers", "plants & diseases", "Pre-processing steps"])
     
@@ -44,15 +43,15 @@ elif page == pages[1]:
         st.write("""
             We work with a database called ‘New Plant Diseases Dataset’ which is a public repository available on Kaggle.
 
-It includes multiple subfolders; Train, Valid and Test. These subfolders contain subfolders per plant where the target image files (jpg) are stored, totalling 87,900 images.
-
-    Files in train_path:            70,295
-    Files in valid_path:            17,572
-    Files in test_path:                 33
-    Total files:                    87,900
+    It includes multiple subfolders; Train, Valid and Test. These subfolders contain subfolders per plant where the target image files (jpg) are stored, totalling 87,900 images.
+    All images have 256 x 256 as their image size:
+                 
+            Files in train_path:            70,295
+        Files in valid_path:            17,572
+        Files in test_path:                 33
+        Total files:                    87,900
                  """)
-        st.write("\n", "Data Frame shape:", "\n", df.shape, "\n")
-        st.write("All images have 256 * 256 as their image size.")
+        
         st.write("In the below table overview you'll find all the names of the plant species and plant diseases: ")
         st.image("src/visualization/Data_Exploration/Plants_&_Diseases_count.png", use_container_width=True)
     
@@ -64,22 +63,30 @@ It includes multiple subfolders; Train, Valid and Test. These subfolders contain
         st.image("src/visualization/Data_Exploration/healthy_plant_samples.png")
 
     with tab3: # Pre-processing steps
-        st.write(""" As for the preprocessing phase we followed these steps to get to the analysis and visualisation phase of the files:
-                 
-                1.1 Import kaggle hub and download dataset. 
-	            1.2 Define the paths.
-	            1.3 Importing necessary libraries for data processing and visualization.
-                1.4 Creating a DataFrame with Train and Valid.
-                1.5 Check for missing values and duplicates between train and valid subset.
+        st.write("As for the preprocessing phase we followed these steps to get to the analysis and visualisation phase of the files:")
+        
+        st.write("")
 
-        The data was already well sorted, indexed and labelled. We only had to create an import path and created lists to work of from: 
-        # Initialize lists
-        image_paths = []
-        species_labels = []
-        disease_labels = []
-        dataset_split = []
+        st.write("""
+        - Import kaggle hub and download dataset.
+        - Define the paths.
+        - Importing necessary libraries for data processing and visualization.
+        - Creating a DataFrame with Train and Valid.
+        - Check for missing values and duplicates between train and valid subset.
+                 """)
 
-        We looked for missing values and duplicates even crosschecked between the train and valid folders and found none. """)
+        st.write("")
+
+        st.write("The data was already well sorted, indexed and labelled. We only had to create an import path and created lists to work of from:")
+        
+        st.write("""
+        - image_paths = []
+        - species_labels = []
+        - disease_labels = []
+        - dataset_split = []
+        """)
+
+        st.write("We looked for missing values and duplicates even cross checked between the train and valid folders and found none. ")
 
 
 ####################
@@ -599,45 +606,63 @@ elif page == pages[5]:
 
 elif page == pages[6]:
     st.write("### Conclusion")
-    st.write('''
+   
+    tab1, tab2, tab3 = st.tabs(["Results", "GradCam" ,"Future perspectives"])
+    
+    with tab1:
+        st.write('''
     This study explored the evolution of image classification models, from basic CNNs to advanced transfer learning techniques. 
     The use of pre-trained models like MobileNetV2, ResNet50 and VGG16, combined with fine-tuning and layer unfreezing, led to significant performance improvements, achieving near-perfect accuracy. 
     The results show that model performance depends on factors like learning rates, layer freezing, and optimization, with transfer learning offering the best results.\n
     The 3 best models obtained, according to the metrics and preformance, were:    
     ''')
+        
+        # Summary of metrics
+        st.markdown("**Metrics summary**")
+        data_conclusion = {
+        'Model': [
+        'MobileNetV2', 'VGG16', 
+        'ResNet 50'
+        ],
+        'Image size': ["256 x 256", "224 x 224", "256 x 256"],
+        'Learnin rate': ["10E-3", "10E-4", "10E-4"],
+        'Freezing': ["All unfrozen", "2-step frozen", "All frozen"],
+        'Train-acc': [0.99, 0.9993, 1.00],
+        'Train-loss': [0.02, 0.003, 0.01],
+        'Val-acc': [0.99, 0.997, 1.00],
+        'Val-loss': [0.05, 0.008, 0.01],
+        'Test-acc': [1.00, 1.00, 1.00]
+        }
 
-    data3 = {
-    'Model': ['MobileNetV2', 'VGG16', 'ResNet 50'],
-    'Image Size': ['256x256', '224x224', '256x256'],
-    'LR': ['10E-3', '10E-4', '10E-4'],
-    'Freezing': ['All unfrozen', '2 step unfrozen', 'All frozen'],
-    'Training Accuracy': [0.99, 0.9993, 1.00],
-    'Training Loss': [0.02, 0.0030, 0.01],
-    'Validation Accuracy': [0.99, 0.997, 1.00],
-    'Validation Loss': [0.05, 0.0089, 0.01],
-    'Test Accuracy': [1.00, 1.00, 1.00]
-    }
+        # Create DataFrame with the updated values
+        df = pd.DataFrame(data_conclusion)
+        df.set_index ('Model', inplace=True)       
+        st.dataframe(df)
+        st.write("\n")
+        st.write("\n")
+   
+        st.write(" Initially, basic CNN models, such as the sequential 2-layer networks, displayed relatively limited performance. Despite slight improvements across varying learning rates and input image sizes (e.g., 224x224 vs. 256x256), these models struggled with high validation losses, often indicating overfitting or insufficient generalization. Models like the Sequential CNN 2-layer with a learning rate of 0.0001 and a 224x224 input size achieved moderate validation accuracy but still left much to be desired.")
+        st.write(" The next step in the modeling evolution involved transfer learning with pre-trained architectures, such as VGG16, MobileNetV2, and ResNet101, among others, which significantly improved model performance. These models started with the ImageNet weights and frozen layers to retain the learned features from the large-scale dataset, with the best results coming from MobileNetV2 and VGG16, especially when the learning rate was finely tuned. The models with the lowest validation loss and highest validation accuracy were those that used MobileNetV2 (frozen), achieving a near-perfect 0.97 accuracy and low validation loss (0.23), indicating their superior generalization capability over CNN-based models.")
+        st.write(" The next refinement occurred through unfreezing layers in the transfer learning models, allowing fine-tuning of the network on the specific dataset. Models like VGG16 unfrozen and MobileNetV2 unfrozen showed impressive performance, particularly when combined with lower learning rates (e.g., 0.0001), which helped the model converge to an optimal solution. The best performing models in terms of both prediction and validation accuracy were those with fully or partly unfrozen layers, such as VGG16 unfrozen V1-2, where a two-step layer unfreezing was applied. This model achieved a perfect validation accuracy of 1.00 with minimal loss.")
+        st.write(" Finally, we applied transfer learning using a model that was already pre trained on plant images, ResNet50, to see how accurate this model could be with our given dataset. For that, we changed the framework to Pytorch instead of Tensorflow/Keras and compared the performance. Again, reducing the learning rate, gave a dramatic improvement of the metrics performance. However, in this case, all the blocks of layers were kept frozen.")
 
-    df3 = pd.DataFrame(data3)
-    df3.set_index ('Model', inplace=True)       
-    st.dataframe(df3)
-    st.write("\n")
-    st.write("\n")
-    
-    st.write('''
+    with tab2:
+        st.write('''
     We chose GradCAM as the interpretation method because it provides clear, visual insights. Its heatmaps highlight the importance of each pixel in relation to the predicted class in a given layer by adjusting the intensity of the pixels. 
     This makes it easier for users to understand and trust the model's decision-making process, increasing confidence in its interpretability.\n
     The following image shows two examples of the gradients obtained by the camera in a model using VGG16:
 
     ''')
-    st.image("src/visualization/Conclusion/GC_VGG16_example.png")
+        st.image("src/visualization/Conclusion/GC_VGG16_example.png")
 
-    st.write('''
+        st.write('''
     The observation of the GradCam images suggests that models can have significantly different focus areas. While some models, like VGG16, focus on the object for feature extraction, others may focus more on the background of the image. 
     These differing approaches can lead to varying results depending on the specific image being classified.
     ''')
-    st.write("**Therefore, we can conclude that here is no one-size-fits-all approach that guarantees the best results. The effectiveness of each method depends on how well it is optimized and the resources required for it.**")
-
+        st.write("**Therefore, we can conclude that here is no one-size-fits-all approach that guarantees the best results. The effectiveness of each method depends on how well it is optimized and the resources required for it.**")
+    
+    with tab3: 
+        st.write("This project provided valuable experience in utilizing deep learning and convolutional neural networks (CNNs) for image classification tasks. We achieved excellent results with a small test dataset. However, the model still requires further refinement to effectively handle and predict large datasets. There are several potential improvements that could enhance model performance. One such option would be the introduction of data transformations, such as thresholding or Canny filtering. Although we mentioned this approach in the data exploration report, we were unable to test it due to programming resource constraints.")
 
 ####################
 # UPLOAD IMAGE     #

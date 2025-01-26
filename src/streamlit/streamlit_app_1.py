@@ -191,6 +191,19 @@ elif page == pages[3]:
         # st.image("Model-architecture_CNN-2.png", use_container_width=True)
         # st.image("Model-architecture_CNN-3.png", use_container_width=True)
 
+        st.write("### Test parameters ")
+        st.markdown('''
+        **1. Size of the train dataset:** 20k vs 70k     
+
+        **2. Image size:** 224x224 vs 256x256      
+
+        **3. Learning rate:** 1e-3 ~ 1e-5     
+
+        **4. Data augmentation**        
+
+        **5. Number of CNN layers:** 2 layers vs 3 layers
+        ''')
+
         st.write("### Performance Metrics ")
         st.markdown('''
         To monitor the performance of the models, the following evaluation metrics were used:
@@ -231,8 +244,8 @@ elif page == pages[3]:
     
         st.markdown('''
         **Summary**
+        - The smoother loss curve and gradual accuracy improvement for larger image sizes (256x256) at lr = 1e-3 suggest better generalization and consistent learning.
         - Increasing the image size from 224x224 to 256x256 improves the test accuracy for both learning rates.
-        - The smoother loss curve and gradual accuracy improvement for larger image sizes (256x256) at lr = 1e-3 suggest better generalization and consistent learning, making it a more reliable choice despite slower accuracy gains.
         ''')
     with tab4: # Learning rate
         st.write("In this section, we tested different learning rates.")
@@ -517,7 +530,7 @@ elif page == pages[4]:
             st.image("src/visualization/CNN/6_VGG16_cm.png", use_container_width=True)
 
         container = st.container(border=True)
-        container.write("The VGG16 architecture, with all layers unfrozen, demonstrated the best performance, achieving a high level of prediction accuracy.")
+        container.write("**The VGG16 architecture, with all layers unfrozen, demonstrated the best performance, achieving a high level of prediction accuracy.**")
         st.write("\n")
 
         st.markdown("**Evaluation with test datasets of different sizes**")

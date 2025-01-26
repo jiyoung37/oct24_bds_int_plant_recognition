@@ -308,7 +308,7 @@ elif page == pages[4]:
     tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(["Transfer Learning", "All layers frozen", "Unfreezing of layers","Learning rate", "Image size", "Fine tuning", "Pre-trained PyTorch"])
     
     with tab1:
-        st.write("After the basic CNN modelling, we incorporated pretrained models into our training that were already designed to be used in visual object recognitions. We considered some of teh most common models and applied different parameter tuning to the ones tha gave the best resu")
+        st.write("After the basic CNN modelling, we incorporated pretrained models into our training that were already designed to be used in visual object recognitions. We considered some of the most common models and applied different parameter tuning to the ones that gave the best results.")
         st.write("**Pre-trained models**")
         st.markdown("· MobileNetV2")
         st.markdown("· VGG16")
@@ -469,7 +469,7 @@ elif page == pages[4]:
 
     with tab4:  # Modification of learning rate
               
-        st.write("Considering the bad performance given by the model with VGG16 with all the layers unfrozen, we decided to reduce the learning rate from 0.001 to 0.0001")
+        st.write("Considering the bad performance given by the model with VGG16 with all the layers unfrozen, we decided to reduce the learning rate from 0.001 to 0.0001.")
         st.markdown("<h2 style='text-align: center; color: green;'>VGG16 </h2>", unsafe_allow_html=True)
         st.markdown("""<div style='text-align: center;'>Metrics history</div>""", unsafe_allow_html=True)
         st.image("src/visualization/Transfer_Learning_param_tests/TL_VGG16_unfrozen_lr10e-4.png")
@@ -497,7 +497,7 @@ elif page == pages[4]:
         st.markdown("**Previous metrics summary**")
         data2 = {
         'Model': [
-            'VGG16 unfrozen', 'VGG16 partly frozen', 'VGG16 unfrozen lr 10E-4', 'VGG16 unfrozen size 224x224'
+            'VGG16 unfrozen', 'VGG16 partly frozen', 'VGG16 unfrozen lr 1E-4', 'VGG16 unfrozen size 224x224'
         ],
         'Accuracy': [0.03, 0.99, 0.99, 1.00],
         'Loss': [3.64, 0.04, 0.05, 0.00],
@@ -625,7 +625,7 @@ elif page == pages[6]:
         'ResNet 50'
         ],
         'Image size': ["256 x 256", "224 x 224", "256 x 256"],
-        'Learnin rate': ["10E-3", "10E-4", "10E-4"],
+        'Learning rate': ["1E-3", "1E-4", "1E-4"],
         'Freezing': ["All unfrozen", "2-step frozen", "All frozen"],
         'Train-acc': [0.99, 0.9993, 1.00],
         'Train-loss': [0.02, 0.003, 0.01],

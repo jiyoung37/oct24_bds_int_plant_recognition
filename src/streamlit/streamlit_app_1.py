@@ -1,6 +1,238 @@
 import streamlit as st
 import os
 import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import json
+from PIL import Image
+
+import tensorflow as tf
+import tensorflow.keras.backend as K
+from tensorflow.keras.models import Model
+from tensorflow.keras.preprocessing.image import img_to_array, array_to_img
+
+import torch
+from torchvision import transforms
+import torch.nn as nn
+import torchvision.models as models
+
+# Function to load Keras model
+def load_keras_model(file_path):
+    return tf.keras.models.load_model(file_path)
+
+# Function to load PyTorch model
+def load_pytorch_model(file_path):
+    model = CustomResNet50(num_classes=38)
+    model.load_state_dict(torch.load(file_path))
+    model.eval()
+    return model
+
+# Load class indices from a JSON file
+def load_class_indices(file_path):
+    with open(file_path, "r") as f:
+        return json.load(f)
+
+# Function to preprocess the uploaded image
+def preprocess_image(image, model):
+    """
+    Preprocess an image to match the input size of the given model.
+
+    Parameters:
+        image (PIL.Image): The input image.
+        model: The trained model (Keras or PyTorch).
+
+    Returns:
+        np.ndarray: The preprocessed image array for Keras.
+        torch.Tensor: The preprocessed image tensor for PyTorch.
+    """
+    if isinstance(model, tf.keras.Model):  # For Keras models
+        input_shape = model.input_shape[1:3]  # Extract input size from the model
+        resized_image = image.resize(input_shape)
+        image_array = np.array(resized_image) / 255.0
+        image_array = np.expand_dims(image_array, axis=0)  # Add batch dimension
+        return image_array
+    elif isinstance(model, torch.nn.Module):  # For PyTorch models
+        input_size = 256  # Default input size for many PyTorch models
+        transform = transforms.Compose([
+            transforms.Resize((input_size, input_size)),  # Resize to input size
+            transforms.ToTensor(),
+        ])
+        return transform(image).unsqueeze(0)  # Add batch dimension
+    else:
+        raise ValueError("Unsupported model type. Please provide a Keras or PyTorch model.")
+
+# Custom ResNet50 class to define our TL architecture
+class CustomResNet50(nn.Module):
+    def __init__(self, num_classes):
+        super(CustomResNet50, self).__init__()
+
+        # Initialize the base model without pre-trained weights
+        self.base_model = models.resnet50(pretrained=False)
+
+        
+        # Modify the final fully connected layer to match the pre-trained model from the .pth file
+        num_ftrs = self.base_model.fc.in_features
+        self.base_model.fc = nn.Linear(num_ftrs, 120)
+      
+        # Initialize the base model and load custom weights
+        state_dict = torch.load('src/models/model_src/ResNet50-Plant-model-80.pth', map_location=torch.device('cpu'))
+        self.base_model.load_state_dict(state_dict)
+      
+        # Modify the classifier
+        num_ftrs = self.base_model.fc.in_features
+        self.base_model.fc = nn.Identity()  # Remove the original FC layer
+      
+        self.classifier = nn.Sequential(
+            nn.Linear(num_ftrs, 1024),
+            nn.ReLU(),
+            nn.Dropout(0.2),
+            nn.Linear(1024, 512),
+            nn.ReLU(),
+            nn.Dropout(0.2),
+            nn.Linear(512, num_classes)
+        )
+
+    def forward(self, x):
+        x = self.base_model(x)
+        x = self.classifier(x)  # Return raw logits
+        return x
+
+
+# Grad-CAM function for Keras
+def generate_grad_cam_keras(model, image, layer_name=None):
+    # Automatically detect the input size of the model
+    input_shape = model.input_shape[1:3]  # Get height and width of the input layer
+
+    # Resize the input image to match the model's input size
+    resized_image = image.resize(input_shape)
+    img_array = img_to_array(resized_image) / 255.0
+    img_array = np.expand_dims(img_array, axis=0)
+
+    # If layer_name is not provided, find the last convolutional layer
+    if not layer_name:
+        layer_name = next(
+            (layer.name for layer in model.layers[::-1] if isinstance(layer, tf.keras.layers.Conv2D)),
+            None
+        )
+        if not layer_name:
+            raise ValueError("No convolutional layer found in the model.")
+
+    # Create a model that maps inputs to activations of the target layer and model output
+    grad_model = Model(inputs=model.input, outputs=[model.get_layer(layer_name).output, model.output])
+
+    # Record operations for automatic differentiation
+    with tf.GradientTape() as tape:
+        conv_outputs, predictions = grad_model(img_array)
+        predicted_class = tf.argmax(predictions[0])
+        loss = predictions[:, predicted_class]
+
+    # Compute the gradient of the loss with respect to the feature map
+    grads = tape.gradient(loss, conv_outputs)
+    pooled_grads = tf.reduce_mean(grads, axis=(0, 1, 2))
+
+    # Compute the Grad-CAM heatmap
+    conv_outputs = conv_outputs[0]
+    heatmap = tf.reduce_sum(pooled_grads * conv_outputs, axis=-1)
+
+    # Normalize the heatmap
+    heatmap = tf.maximum(heatmap, 0)
+    max_value = tf.reduce_max(heatmap)
+    if max_value > 0:
+        heatmap /= max_value
+    heatmap = heatmap.numpy()
+
+    # Resize the heatmap to the original image size
+    heatmap = np.uint8(255 * heatmap)
+    heatmap = Image.fromarray(heatmap).resize(image.size, resample=Image.BILINEAR)
+
+    # Overlay the heatmap on the image
+    heatmap = np.array(heatmap)
+    colormap = plt.cm.jet(heatmap / 255.0)[:, :, :3]  # Apply colormap
+    overlay = (colormap * 255).astype(np.uint8)
+    overlay_image = Image.blend(image.convert("RGBA"), Image.fromarray(overlay).convert("RGBA"), alpha=0.5)
+
+    return overlay_image
+
+# Grad-CAM function for PyTorch
+def generate_grad_cam_pytorch(model, image, target_layer_name=None):
+    """
+    Generate Grad-CAM visualization for a PyTorch model.
+  
+    Parameters:
+        model: PyTorch model
+        image: PIL Image (input image)
+        layer_name: str (name of the target convolutional layer), if not provided the function iterates through the
+                    model's layer in reverse and finds the last Conv2d layer
+
+    Returns:
+        PIL Image with the Grad-CAM overlay
+    """
+    from torch.nn import Conv2d
+
+    # Automatically detect the last convolutional layer if target_layer_name is not provided
+    if target_layer_name is None:
+        for name, module in reversed(list(model.named_modules())):
+            if isinstance(module, Conv2d):
+                target_layer_name = name
+                break
+        if target_layer_name is None:
+            raise ValueError("No convolutional layer found in the model.")
+
+    # Transform and preprocess the image
+    transform = transforms.Compose([
+        transforms.Resize((256, 256)),  # Resize to the input size of the model
+        transforms.ToTensor(),
+    ])
+    torch_image = transform(image).unsqueeze(0)  # Add batch dimension
+
+    # Hook to capture gradients and activations
+    gradients = []
+    activations = []
+
+    def save_gradients(module, grad_input, grad_output):
+        gradients.append(grad_output[0])
+
+    def save_activations(module, input, output):
+        activations.append(output)
+
+    # Register hooks on the target layer
+    target_layer = dict(model.named_modules())[target_layer_name]
+    target_layer.register_forward_hook(save_activations)
+    target_layer.register_backward_hook(save_gradients)
+
+    # Forward pass
+    model.eval()
+    output = model(torch_image)
+    class_index = output.argmax(dim=1).item()
+
+    # Backward pass for the target class
+    model.zero_grad()
+    loss = output[0, class_index]
+    loss.backward()
+
+    # Compute Grad-CAM
+    gradients = gradients[0].detach().cpu().numpy()
+    activations = activations[0].detach().cpu().numpy()
+    weights = np.mean(gradients, axis=(2, 3))  # Global average pooling of gradients
+    grad_cam = np.zeros(activations.shape[2:], dtype=np.float32)
+    for i, w in enumerate(weights[0]):
+        grad_cam += w * activations[0, i, :, :]
+
+    grad_cam = np.maximum(grad_cam, 0)
+    grad_cam = grad_cam / grad_cam.max() if grad_cam.max() != 0 else grad_cam
+
+    # Resize heatmap to match original image size
+    grad_cam = np.uint8(255 * grad_cam)
+    heatmap = Image.fromarray(grad_cam).resize(image.size, resample=Image.BILINEAR)
+
+    # Overlay heatmap on the image
+    heatmap = np.array(heatmap)
+    colormap = plt.cm.jet(heatmap / 255.0)[:, :, :3]  # Apply colormap
+    overlay = (colormap * 255).astype(np.uint8)
+    overlay_image = Image.blend(image.convert("RGBA"), Image.fromarray(overlay).convert("RGBA"), alpha=0.5)
+
+    return overlay_image
+
 
 # Load the CSV file into a DataFrame
 df = pd.read_csv("src/streamlit/plant_dataset.csv")
@@ -582,8 +814,16 @@ elif page == pages[4]:
         st.write("")
         st.write("")
         st.write("""Lowering the learning rate improves the validation loss on an absolute scale but the fluctuations during training 
-                 are still observable. This raises the question wether the architecture itself 
-""")
+                 are still observable. At this point, we would need to look again at the model's architecture and possibly compare these 
+                 results with other transfer learning models. However, the performance of the best model is very good. On the (admittedly small) 
+                 test set of 33 images, it predicted all classes correctly. The confusion matrix for the validation set shows only one-digit entries 
+                 on the off-diagonal. It predicted the class “Corn_(maize)__healthy” worst where it confused it nine times with “Strawberry__healthy”. 
+                 From the total 17,572 images in the validation set, the model failed to predict the correct class in 43 cases, corresponding to an 
+                 accuracy of 0.997.
+        """)
+        st.write("")
+        st.write("")
+        st.image("src/visualization/Transfer_Learning_PyTorch_ResNet50/ResNet50_all-frozen_lr-1e-4_confusion_matrix.png")
 
 ####################
 # MODEL INTERPRET  #
@@ -591,12 +831,32 @@ elif page == pages[4]:
 
 
 elif page == pages[5]:
-    st.write("### Model Interpretability")
-    st.write("Yanniks Todo's:")
-    st.checkbox("Why interpretability matters ")
-    st.checkbox("Short explanationon Grad-CAM")
-    st.checkbox("Show some examples")
-    st.checkbox("Grad-CAMs when going through the layers of a model")
+    st.write("## Model Interpretability")
+    st.write("### Why It Matters")
+    st.write("""
+        - **Trust and Transparancy**: Understanding why a model makes certain predictions increases user trust.
+        - **Error Analysis**: Interpretability helps identify model biases, misclassifications, and areas for improvement. 
+        - **Debugging Models**: Insights into model decisions enable developers to identify issues in data, architecture, or training.
+                 """)
+    st.write("")
+    st.write("")
+    st.write("### Gradient-weighted Class Activation Mappping (Grad-CAM)")
+    st.write("**What is Grad-CAM?**")
+    st.write("""Grad-CAM is a technique that visualizes the regions of an input image that contribute most to the model's prediction. 
+             It provides class-specific heatmaps overlaid on the original image. Understanding why a model makes certain predictions 
+             increases user trust.
+             """)
+    st.write("**How it works:**")
+    st.write("""
+        - Choosing the intermediate output (feature map) of a convolutional layer in the model.
+        - Computing the gradient of the model’s final output with respect to the feature map. 
+        - all regions are then weighted and combined to give a heatmap which is projected onto the input image.
+            """)
+    st.write("""**High gradients** in a certain image region mean that a small change in the feature map will **significantly affect** the model **output**.
+             The heatmap thus highlights spatially relevant features in an image and enhances trust by showing **where the model "looks"** to make its decision.
+             """)
+    st.write("")
+    st.image("src/visualization/Grad-CAM.png")
 
 
 ####################

@@ -285,7 +285,7 @@ elif page == pages[1]:
                  """)
         
         st.write("In the below table overview you'll find all the names of the plant species and plant diseases: ")
-        st.image("src/visualization/Data_Exploration/Plants_&_Diseases_count.png", use_container_width=True)
+        st.image("src/visualization/Data_Exploration/Plants_&_Diseases_count_1.png", use_container_width=True)
     
     with tab2: # Plants & diseases
         st.write("")
@@ -360,6 +360,8 @@ elif page == pages[2]:
         st.image("src/visualization/Data_Exploration/DExp_CM_species_diseases.png")
         st.markdown("""<span style='color: red;'>We clearly observe that some species do not contain any disease examples and some species do not contain healthy examples.</span>""", unsafe_allow_html=True)
 
+        st.markdown("**Healthy vs disease distribution by species**")
+        st.image("src/visualization/Data_Exploration/Disease_distribution_1.png")
 
     with tab4:
         st.write('''
